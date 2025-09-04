@@ -185,7 +185,7 @@ const NewDashboardScreen = () => {
       id: '4',
       title: 'Renew Policy',
       icon: '🔄',
-      action: () => navigation.navigate('DuePayments')
+      action: () => navigation.navigate('DuePayment')
     }
   ];
 
