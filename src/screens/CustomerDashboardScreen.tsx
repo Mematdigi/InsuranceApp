@@ -9,6 +9,7 @@ import {
   StatusBar,
   Alert,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -17,7 +18,7 @@ const { width } = Dimensions.get('window');
 
 // Configuration
 const API_CONFIG = {
-  BASE_URL: 'http://10.0.2.2:5000/api/customers', // Change this to your server URL
+  BASE_URL: 'http://10.0.2.2:5000', // Change to your server URL
   ENDPOINTS: {
     FETCH_POLICIES: (customerId: string) => `/v1/customer/customer-fetch-policy/${customerId}`,
   }
@@ -64,60 +65,101 @@ interface SupportTab {
 const NewDashboardScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const [username, setUsername] = useState('Rohit Bhardwaj');
+  const [username, setUsername] = useState('User');
+  const [userId, setUserId] = useState<string | null>(null);
   const [policyCards, setPolicyCards] = useState<PolicyCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     loadUserData();
-    fetchPolicies();
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchPolicies();
+    }
+  }, [userId]);
 
   const loadUserData = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
-        setUsername(user.username || user.name || 'Rohit Bhardwaj');
+        setUsername(user.username || user.name || 'User');
+        setUserId(user.id);
       } else if (route.params?.username) {
         setUsername(route.params.username);
+      } else {
+        // If no user data, navigate to login
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
       }
     } catch (error) {
-      console.log('Error loading user data:', error);
+      console.error('Error loading user data:', error);
+      setError('Failed to load user data');
     }
   };
 
-  const fetchPolicies = async () => {
+  const fetchPolicies = async (isRefresh = false) => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (!userData) {
-        console.warn('User data not found');
+      if (!isRefresh) setLoading(true);
+      setError(null);
+
+      if (!userId) {
+        setError('User ID not found');
         return;
       }
+
+      console.log('Fetching policies for user ID:', userId);
+      const apiUrl = `${API_CONFIG.BASE_URL}/v1/customer/customer-fetch-policy/${userId}`;
       
-      const user = JSON.parse(userData);
-      if (!user?.id) {
-        console.warn('User ID not found');
-        return;
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('API Response status:', response.status);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          // No policies found - this is normal for new users
+          setPolicyCards([]);
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}`);
       }
 
-      console.log('Fetching policies for user ID:', user.id);
-      const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FETCH_POLICIES(user.id)}`;
-      const response = await fetch(apiUrl);
       const data = await response.json();
+      console.log('API Response:', data);
 
-      if (response.ok) {
-        const policies = Array.isArray(data.policyData) ? data.policyData : [];
-        setPolicyCards(policies.slice(0, 3)); // Show first 3 policies
-        console.log('Policies fetched successfully:', policies);
+      if (data.policyData && Array.isArray(data.policyData)) {
+        setPolicyCards(data.policyData.slice(0, 3)); // Show first 3 policies
+        console.log('Policies loaded successfully:', data.policyData.length);
       } else {
-        console.warn('Failed to fetch policies:', data.message);
+        setPolicyCards([]);
+        console.log('No policies found in response');
       }
+
     } catch (error) {
       console.error('Error fetching policies:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch policies');
+      setPolicyCards([]);
     } finally {
       setLoading(false);
+      if (isRefresh) setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchPolicies(true);
   };
 
   const policyActions: PolicyAction[] = [
@@ -197,7 +239,7 @@ const NewDashboardScreen = () => {
                 routes: [{ name: 'Login' }],
               });
             } catch (error) {
-              console.log('Error logging out:', error);
+              console.error('Error logging out:', error);
             }
           }
         }
@@ -206,7 +248,6 @@ const NewDashboardScreen = () => {
   };
 
   const handlePolicyCardPress = (policy: PolicyCard) => {
-    // Navigate to policy details screen
     navigation.navigate('PolicyDetails', {
       customerId: policy.customerId,
       policyId: policy._id,
@@ -215,20 +256,59 @@ const NewDashboardScreen = () => {
   };
 
   const getCompanyName = (policyType: string) => {
-    if (policyType?.toLowerCase().includes('hdfc')) return 'HDFC';
-    if (policyType?.toLowerCase().includes('icici')) return 'ICICI';
-    if (policyType?.toLowerCase().includes('tata')) return 'TATA';
-    if (policyType?.toLowerCase().includes('lic')) return 'LIC';
+    if (!policyType) return 'Insurance Co.';
+    const type = policyType.toLowerCase();
+    if (type.includes('hdfc')) return 'HDFC';
+    if (type.includes('icici')) return 'ICICI';
+    if (type.includes('tata')) return 'TATA';
+    if (type.includes('lic')) return 'LIC';
+    if (type.includes('bajaj')) return 'BAJAJ';
     return 'Insurance Co.';
   };
 
   const formatPremium = (amount: string | number) => {
-    const numericAmount = typeof amount === 'string' ? parseInt(amount.replace(/[^0-9]/g, '')) : amount;
+    if (!amount) return '0';
+    const numericAmount = typeof amount === 'string' ? 
+      parseInt(amount.replace(/[^0-9]/g, '')) : amount;
+    
+    if (isNaN(numericAmount)) return '0';
+    
+    if (numericAmount >= 100000) {
+      return `${(numericAmount / 100000).toFixed(1)}L`;
+    }
     if (numericAmount >= 1000) {
       return `${(numericAmount / 1000).toFixed(1)}K`;
     }
     return numericAmount.toString();
   };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    // Handle different date formats from backend
+    if (dateString.includes('/')) {
+      return dateString; // Already in DD/MM/YYYY format
+    }
+    if (dateString.includes('-')) {
+      // Convert YYYY-MM-DD to DD/MM/YYYY
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    return dateString;
+  };
+
+  if (error && !policyCards.length && !loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchPolicies()}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -267,7 +347,18 @@ const NewDashboardScreen = () => {
         <View style={[styles.headerCircle, styles.headerCircle3]} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#4ECDC4']}
+            tintColor="#4ECDC4"
+          />
+        }
+      >
         
         {/* Policy Actions Card */}
         <View style={styles.policyActionsCard}>
@@ -279,6 +370,7 @@ const NewDashboardScreen = () => {
                 key={action.id} 
                 style={styles.actionItem}
                 onPress={action.action}
+                activeOpacity={0.7}
               >
                 <View style={styles.actionIconContainer}>
                   <Text style={styles.actionIcon}>{action.icon}</Text>
@@ -317,10 +409,19 @@ const NewDashboardScreen = () => {
                 key={card._id || card.policyNumber} 
                 style={styles.insuranceCard}
                 onPress={() => handlePolicyCardPress(card)}
+                activeOpacity={0.8}
               >
                 <View style={styles.cardHeader}>
-                  <View style={styles.cardStatus}>
-                    <Text style={styles.statusText}>{card.status}</Text>
+                  <View style={[
+                    styles.cardStatus, 
+                    card.status === 'Overdue' && styles.overdueStatus
+                  ]}>
+                    <Text style={[
+                      styles.statusText,
+                      card.status === 'Overdue' && styles.overdueStatusText
+                    ]}>
+                      {card.status || 'Active'}
+                    </Text>
                   </View>
                   <Text style={styles.companyName}>
                     {getCompanyName(card.policyType || '')}
@@ -331,13 +432,13 @@ const NewDashboardScreen = () => {
                 </View>
                 
                 <View style={styles.cardBody}>
-                  <Text style={styles.insuranceType}>{card.policyType || 'Insurance Policy'}</Text>
+                  <Text style={styles.insuranceType}>
+                    {card.policyType || 'Insurance Policy'}
+                  </Text>
                   <Text style={styles.insuranceSubType}>
-                    {card.productName ? 
-                      (card.productName.length > 25 ? 
-                        card.productName.substring(0, 25) + '...' : 
-                        card.productName) : 
-                      'Policy Coverage'}
+                    {card.productName && card.productName.length > 25 ? 
+                      card.productName.substring(0, 25) + '...' : 
+                      card.productName || 'Policy Coverage'}
                   </Text>
                 </View>
                 
@@ -345,12 +446,15 @@ const NewDashboardScreen = () => {
                   <View style={styles.premiumInfo}>
                     <Text style={styles.premiumLabel}>Premium :</Text>
                     <Text style={styles.premiumAmount}>
-                      ₹{formatPremium(card.premiumAmount || '0')}<Text style={styles.frequency}> / Year</Text>
+                      ₹{formatPremium(card.premiumAmount || '0')}
+                      <Text style={styles.frequency}> / Year</Text>
                     </Text>
                   </View>
                   <View style={styles.expiryInfo}>
                     <Text style={styles.expiryLabel}>Expires :</Text>
-                    <Text style={styles.expiryDate}>{card.endDate || 'N/A'}</Text>
+                    <Text style={styles.expiryDate}>
+                      {formatDate(card.endDate)}
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -366,6 +470,7 @@ const NewDashboardScreen = () => {
                   <TouchableOpacity 
                     style={styles.addPolicyButton}
                     onPress={() => navigation.navigate('ChooseCompany')}
+                    activeOpacity={0.8}
                   >
                     <Text style={styles.addPolicyButtonText}>Add policy</Text>
                   </TouchableOpacity>
@@ -403,10 +508,14 @@ const NewDashboardScreen = () => {
         
         <View style={styles.updatesCard}>
           {importantUpdates.map((update, index) => (
-            <TouchableOpacity key={update.id} style={[
-              styles.updateItem,
-              index !== importantUpdates.length - 1 && styles.updateItemBorder
-            ]}>
+            <TouchableOpacity 
+              key={update.id} 
+              style={[
+                styles.updateItem,
+                index !== importantUpdates.length - 1 && styles.updateItemBorder
+              ]}
+              activeOpacity={0.7}
+            >
               <View style={styles.updateIcon}>
                 <Text style={styles.updateEmoji}>{update.icon}</Text>
               </View>
@@ -468,7 +577,7 @@ const NewDashboardScreen = () => {
               <Text style={styles.educationMainText}>Covers you against unexpected expenses</Text>
               <Text style={styles.educationSubText}>Stay secure when life brings financial shocks</Text>
               
-              <TouchableOpacity style={styles.exploreButton}>
+              <TouchableOpacity style={styles.exploreButton} activeOpacity={0.8}>
                 <Text style={styles.exploreButtonText}>Explore Now</Text>
               </TouchableOpacity>
             </View>
@@ -485,6 +594,7 @@ const NewDashboardScreen = () => {
                 key={support.id}
                 style={styles.helpButton}
                 onPress={support.action}
+                activeOpacity={0.8}
               >
                 <View style={styles.helpButtonIcon}>
                   <Text style={styles.helpButtonEmoji}>{support.icon}</Text>
@@ -493,7 +603,7 @@ const NewDashboardScreen = () => {
               </TouchableOpacity>
             ))}
             
-            <TouchableOpacity style={styles.helpButton}>
+            <TouchableOpacity style={styles.helpButton} activeOpacity={0.8}>
               <View style={styles.helpButtonIcon}>
                 <Text style={styles.helpButtonEmoji}>💬</Text>
               </View>
@@ -501,7 +611,7 @@ const NewDashboardScreen = () => {
             </TouchableOpacity>
           </View>
           
-          <TouchableOpacity style={styles.chatBotButton}>
+          <TouchableOpacity style={styles.chatBotButton} activeOpacity={0.8}>
             <View style={styles.chatBotIcon}>
               <Text style={styles.chatBotEmoji}>🤖</Text>
             </View>
@@ -524,7 +634,10 @@ const NewDashboardScreen = () => {
             <Text style={styles.navEmoji}>🔍</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Profile')}
+        >
           <View style={styles.navIcon}>
             <Text style={styles.navEmoji}>👤</Text>
           </View>
@@ -544,6 +657,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F0F9F8',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   header: {
     backgroundColor: '#4ECDC4',
     paddingTop: 10,
@@ -551,8 +687,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     position: 'relative',
     overflow: 'hidden',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
   },
   headerContent: {
     flexDirection: 'row',
@@ -717,10 +851,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
+  overdueStatus: {
+    backgroundColor: '#FF6B6B',
+  },
   statusText: {
     color: 'white',
     fontSize: 12,
     fontWeight: '600',
+  },
+  overdueStatusText: {
+    color: 'white',
   },
   companyName: {
     color: 'white',
