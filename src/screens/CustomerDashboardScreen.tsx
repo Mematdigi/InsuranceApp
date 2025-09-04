@@ -53,6 +53,14 @@ interface UpdateNotification {
   color: string;
 }
 
+interface SupportTab {
+  id: string;
+  title: string;
+  icon: string;
+  color: string;
+  action: () => void;
+}
+
 const NewDashboardScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -135,11 +143,10 @@ const NewDashboardScreen = () => {
       id: '4',
       title: 'Renew Policy',
       icon: '🔄',
-      action: () => navigation.navigate('DuePayment')
+      action: () => navigation.navigate('DuePayments')
     }
   ];
 
-  
   const importantUpdates: UpdateNotification[] = [
     {
       id: '1',
@@ -161,6 +168,16 @@ const NewDashboardScreen = () => {
       subtitle: 'Policy expiring soon',
       icon: '⚠️',
       color: '#FFB84D'
+    }
+  ];
+
+  const appsupport: SupportTab[] = [
+    {
+      id: '1',
+      title: "FAQ's",
+      icon: '❓',
+      color: '#4ECDC4',
+      action: () => navigation.navigate('FAQ')
     }
   ];
 
@@ -220,10 +237,22 @@ const NewDashboardScreen = () => {
       {/* Modern Curved Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <View style={styles.profileCircle}>
+              <Text style={styles.profileInitial}>
+                {username.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.greetingSection}>
             <Text style={styles.greetingText}>Welcome Back</Text>
             <Text style={styles.usernameText}>{username}</Text>
           </View>
+          
           <TouchableOpacity style={styles.notificationButton}>
             <View style={styles.notificationIcon}>
               <Text style={styles.bellIcon}>🔔</Text>
@@ -263,7 +292,7 @@ const NewDashboardScreen = () => {
         {/* Your Insurance Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your Insurance</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('MyPolicy')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -282,49 +311,51 @@ const NewDashboardScreen = () => {
                 <Text style={styles.noDataSubtext}>Fetching your policies</Text>
               </View>
             </View>
-          ) : policyCards.length > 0 ? policyCards.map((card) => (
-            <TouchableOpacity 
-              key={card._id || card.policyNumber} 
-              style={styles.insuranceCard}
-              onPress={() => handlePolicyCardPress(card)}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardStatus}>
-                  <Text style={styles.statusText}>{card.status}</Text>
+          ) : policyCards.length > 0 ? (
+            policyCards.map((card) => (
+              <TouchableOpacity 
+                key={card._id || card.policyNumber} 
+                style={styles.insuranceCard}
+                onPress={() => handlePolicyCardPress(card)}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardStatus}>
+                    <Text style={styles.statusText}>{card.status}</Text>
+                  </View>
+                  <Text style={styles.companyName}>
+                    {getCompanyName(card.policyType || '')}
+                  </Text>
+                  <View style={styles.companyLogo}>
+                    <View style={styles.logoCircle} />
+                  </View>
                 </View>
-                <Text style={styles.companyName}>
-                  {getCompanyName(card.policyType || '')}
-                </Text>
-                <View style={styles.companyLogo}>
-                  <View style={styles.logoCircle} />
-                </View>
-              </View>
-              
-              <View style={styles.cardBody}>
-                <Text style={styles.insuranceType}>{card.policyType || 'Insurance Policy'}</Text>
-                <Text style={styles.insuranceSubType}>
-                  {card.productName ? 
-                    (card.productName.length > 25 ? 
-                      card.productName.substring(0, 25) + '...' : 
-                      card.productName) : 
-                    'Policy Coverage'}
-                </Text>
-              </View>
-              
-              <View style={styles.cardFooter}>
-                <View style={styles.premiumInfo}>
-                  <Text style={styles.premiumLabel}>Premium :</Text>
-                  <Text style={styles.premiumAmount}>
-                    ₹{formatPremium(card.premiumAmount || '0')}<Text style={styles.frequency}> / Year</Text>
+                
+                <View style={styles.cardBody}>
+                  <Text style={styles.insuranceType}>{card.policyType || 'Insurance Policy'}</Text>
+                  <Text style={styles.insuranceSubType}>
+                    {card.productName ? 
+                      (card.productName.length > 25 ? 
+                        card.productName.substring(0, 25) + '...' : 
+                        card.productName) : 
+                      'Policy Coverage'}
                   </Text>
                 </View>
-                <View style={styles.expiryInfo}>
-                  <Text style={styles.expiryLabel}>Expires :</Text>
-                  <Text style={styles.expiryDate}>{card.endDate || 'N/A'}</Text>
+                
+                <View style={styles.cardFooter}>
+                  <View style={styles.premiumInfo}>
+                    <Text style={styles.premiumLabel}>Premium :</Text>
+                    <Text style={styles.premiumAmount}>
+                      ₹{formatPremium(card.premiumAmount || '0')}<Text style={styles.frequency}> / Year</Text>
+                    </Text>
+                  </View>
+                  <View style={styles.expiryInfo}>
+                    <Text style={styles.expiryLabel}>Expires :</Text>
+                    <Text style={styles.expiryDate}>{card.endDate || 'N/A'}</Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          )          ) : (
+              </TouchableOpacity>
+            ))
+          ) : (
             <View style={styles.welcomeCard}>
               <View style={styles.welcomeContent}>
                 <View style={styles.welcomeTextSection}>
@@ -449,12 +480,18 @@ const NewDashboardScreen = () => {
           <Text style={styles.helpTitle}>Need Help !</Text>
           
           <View style={styles.helpButtonsRow}>
-            <TouchableOpacity style={styles.helpButton}>
-              <View style={styles.helpButtonIcon}>
-                <Text style={styles.helpButtonEmoji}>✉️</Text>
-              </View>
-              <Text style={styles.helpButtonText}>Mail Us</Text>
-            </TouchableOpacity>
+            {appsupport.map((support) => (
+              <TouchableOpacity 
+                key={support.id}
+                style={styles.helpButton}
+                onPress={support.action}
+              >
+                <View style={styles.helpButtonIcon}>
+                  <Text style={styles.helpButtonEmoji}>{support.icon}</Text>
+                </View>
+                <Text style={styles.helpButtonText}>{support.title}</Text>
+              </TouchableOpacity>
+            ))}
             
             <TouchableOpacity style={styles.helpButton}>
               <View style={styles.helpButtonIcon}>
@@ -520,12 +557,14 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     zIndex: 10,
     marginTop: 10,
   },
   greetingSection: {
     flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 16,
   },
   greetingText: {
     color: '#D7EAEE',
@@ -1231,6 +1270,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#4ECDC4',
+  },
+  profileButton: {
+    padding: 4,
+  },
+  profileCircle: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  profileInitial: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

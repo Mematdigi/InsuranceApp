@@ -20,6 +20,7 @@ import MyPolicyScreen from './src/screens/MyPolicyScreen';
 import PolicyOverviewScreen from './src/screens/PolicyOverviewScreen';
 import DuePaymentsScreen from './src/screens/DuePaymentScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import FAQScreen from './src/screens/FAQScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -41,6 +42,7 @@ export type RootStackParamList = {
   };
   DuePayment:undefined;
   Profile:undefined;
+  FAQ:undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -64,6 +66,7 @@ const App = () => {
         <Stack.Screen name="PolicyDetails" component={PolicyOverviewScreen}/>
         <Stack.Screen name="DuePayment" component={DuePaymentsScreen}/>
         <Stack.Screen name="Profile" component={ProfileScreen}/>
+        <Stack.Screen name="FAQ" component={FAQScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
