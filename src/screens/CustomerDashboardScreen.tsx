@@ -52,6 +52,7 @@ interface UpdateNotification {
   subtitle: string;
   icon: string;
   color: string;
+  action: () => void;
 }
 
 interface SupportTab {
@@ -195,21 +196,24 @@ const NewDashboardScreen = () => {
       title: 'Payment Alerts',
       subtitle: 'Payment overdue reminders',
       icon: '💳',
-      color: '#4ECDC4'
+      color: '#4ECDC4',
+      action: () => navigation.navigate('DuePayment')
     },
     {
       id: '2',
       title: 'Policy Updates',
       subtitle: 'New terms and conditions',
       icon: '📄',
-      color: '#61BACA'
+      color: '#61BACA',
+      action:() => Alert.alert('Coming Soon')
     },
     {
       id: '3',
       title: 'Renewal Notice',
       subtitle: 'Policy expiring soon',
       icon: '⚠️',
-      color: '#FFB84D'
+      color: '#FFB84D',
+      action:() => Alert.alert('Coming Soon')
     }
   ];
 

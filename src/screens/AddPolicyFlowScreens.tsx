@@ -167,11 +167,14 @@ const InsuranceNumberScreen = () => {
   const [activeTab, setActiveTab] = useState('upload');
 
   const handleContinue = () => {
-    if (!insuranceNumber.trim()) {
-      Alert.alert('Input Required', 'Please enter your insurance number');
-      return;
-    }
-    navigation.navigate('AddPolicyStep3', { insuranceNumber });
+    // Navigate directly to Upload Policy screen (Step 3)
+    navigation.navigate('UploadPolicy', { insuranceNumber });
+  };
+
+  const handleSkip = () => {
+    setInsuranceNumber(''); // Clear any entered number
+    // Navigate directly to Upload Policy screen (Step 3) with empty number
+    navigation.navigate('UploadPolicy', { insuranceNumber: '' });
   };
 
   const handleTabChange = (tab: string) => {
@@ -221,8 +224,12 @@ const InsuranceNumberScreen = () => {
         <View style={styles.inputSection}>
           <View style={styles.inputHeader}>
             <Text style={styles.inputIcon}>📄</Text>
-            <Text style={styles.inputLabel}>Insurance Number</Text>
+            <Text style={styles.inputLabel}>Insurance Number (Optional)</Text>
           </View>
+          
+          <Text style={styles.inputDescription}>
+            Enter your policy number if you have it. Don't worry if you don't have it - you can skip this step!
+          </Text>
           
           <TextInput
             style={styles.textInput}
@@ -233,17 +240,26 @@ const InsuranceNumberScreen = () => {
           />
         </View>
 
-        {/* Continue Button */}
-        <TouchableOpacity 
-          style={[styles.continueButton, !insuranceNumber.trim() && styles.disabledButton]} 
-          onPress={handleContinue}
-          disabled={!insuranceNumber.trim()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
+        {/* Button Row - Updated with better sizing */}
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.skipButton}
+            onPress={handleSkip}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.skipButtonText}>Skip</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.continueButtonInRow}
+            onPress={handleContinue}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.continueButtonText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Progress Indicator */}
+        {/* Progress Indicator - Fixed to show 2 of 3 */}
         <View style={styles.progressSection}>
           <View style={styles.progressCircle}>
             <View style={styles.progressInner}>
@@ -251,7 +267,7 @@ const InsuranceNumberScreen = () => {
             </View>
           </View>
           <Text style={styles.progressLabel}>Insurance Number</Text>
-          <Text style={styles.progressDescription}>Add your policy number reference</Text>
+          <Text style={styles.progressDescription}>Add your policy number reference (optional)</Text>
         </View>
 
         {/* Navigation */}
@@ -265,96 +281,9 @@ const InsuranceNumberScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.navButton} 
-            onPress={handleContinue}
+            onPress={handleSkip}
             activeOpacity={0.7}
           >
-            <Text style={styles.navText}>Next →</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-// Screen 3: Insurance Number with Sample Data
-const InsuranceNumberWithDataScreen = () => {
-  const navigation = useNavigation<any>();
-  const [insuranceNumber, setInsuranceNumber] = useState('876473474764324764');
-  const [activeTab, setActiveTab] = useState('upload');
-
-  const handleContinue = () => {
-    navigation.navigate('AddPolicyStep4', { insuranceNumber });
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    if (tab === 'manual') {
-      navigation.navigate('FillManually');
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Policy</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Tab Bar */}
-      <View style={styles.tabContainer}>
-        <View style={[styles.tab, styles.activeTab]}>
-          <Text style={styles.activeTabText}>📤 Upload Policy</Text>
-        </View>
-        <View style={styles.tab}>
-          <Text style={styles.tabText}>✏️ Fill Manually</Text>
-        </View>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* Input Section */}
-        <View style={styles.inputSection}>
-          <View style={styles.inputHeader}>
-            <Text style={styles.inputIcon}>📄</Text>
-            <Text style={styles.inputLabel}>Insurance Number</Text>
-          </View>
-          
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter Insurance Number"
-            value={insuranceNumber}
-            onChangeText={setInsuranceNumber}
-            autoCapitalize="characters"
-          />
-        </View>
-
-        {/* Continue Button */}
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
-
-        {/* Progress Indicator */}
-        <View style={styles.progressSection}>
-          <View style={styles.progressCircle}>
-            <View style={styles.progressInner}>
-              <Text style={styles.progressText}>2 of 3</Text>
-            </View>
-          </View>
-          <Text style={styles.progressLabel}>Insurance Number</Text>
-          <Text style={styles.progressDescription}>Add your policy number reference</Text>
-        </View>
-
-        {/* Navigation */}
-        <View style={styles.navigationSection}>
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.navText}>← Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navButton} onPress={handleContinue}>
             <Text style={styles.navText}>Skip →</Text>
           </TouchableOpacity>
         </View>
@@ -363,10 +292,13 @@ const InsuranceNumberWithDataScreen = () => {
   );
 };
 
-// Screen 4: Upload Policy Document
-const UploadPolicyScreen = () => {
+// Screen 3: Upload Policy Document (Final Step)
+const UploadPolicyScreen = ({ route }: any) => {
   const navigation = useNavigation<any>();
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Get params from previous screens
+  const { company, insuranceNumber } = route.params || {};
 
   const handleUpload = () => {
     // Handle file upload logic here
@@ -470,7 +402,7 @@ const UploadPolicyScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Progress Indicator */}
+        {/* Progress Indicator - Fixed to show 3 of 3 */}
         <View style={styles.progressSection}>
           <View style={styles.progressCircle}>
             <View style={styles.progressInner}>
@@ -721,7 +653,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
-    minHeight: 50, // Ensure minimum touch target
+    minHeight: 50,
   },
   disabledButton: {
     backgroundColor: '#B0D9D5',
@@ -818,7 +750,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     minWidth: 80,
-    minHeight: 44, // Minimum touch target size
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -827,12 +759,54 @@ const styles = StyleSheet.create({
     color: '#4ECDC4',
     fontWeight: '600',
   },
+  buttonRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 12,
+  },
+  skipButton: {
+    flex: 0.4, // Smaller flex value for skip button
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  skipButtonText: {
+    color: '#4ECDC4',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  continueButtonInRow: {
+    flex: 0.6, // Larger flex value for continue button
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+    minHeight: 50,
+  },
+  inputDescription: {
+    fontSize: 14,
+    color: '#61BACA',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
 });
 
-// Export all screens
+// Export only the necessary screens (removed InsuranceNumberWithDataScreen)
 export {
   ChooseCompanyScreen,
   InsuranceNumberScreen,
-  InsuranceNumberWithDataScreen,
   UploadPolicyScreen,
 };

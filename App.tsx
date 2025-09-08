@@ -8,11 +8,11 @@ import LoginPage from './src/screens/LatestLoginScreen';
 import DashboardPage from './src/screens/DashboardScreen';
 import NewDashboardScreen from './src/screens/CustomerDashboardScreen';  
 import SelectInsurancePage from './src/screens/SelectInsuranceScreen';
-import AddPolicyPage from './src/screens/AddPolicyScreen';
+//import AddPolicyPage from './src/screens/AddPolicyScreen';
 import { 
   ChooseCompanyScreen,
   InsuranceNumberScreen,
-  InsuranceNumberWithDataScreen,
+  //InsuranceNumberWithDataScreen,
   UploadPolicyScreen,
 } from './src/screens/AddPolicyFlowScreens';
 import FillManuallyScreen from './src/screens/FillManuallyScreen';
@@ -30,9 +30,9 @@ export type RootStackParamList = {
   AddPolicy: undefined;
   ChooseCompany: undefined;
   AddPolicyStep2: { company: string };
-  AddPolicyStep3: { company: string; insuranceNumber: string };
-  AddPolicyStep4: { company: string; insuranceNumber: string };
-  UploadPolicy: { company: string; insuranceNumber: string };
+  //AddPolicyStep3: { company: string; insuranceNumber: string };
+ // AddPolicyStep4: { company: string; insuranceNumber: string };
+  UploadPolicy: { company?: string; insuranceNumber?: string };
   FillManually:undefined;
   MyPolicy : undefined;
   PolicyDetails:{
@@ -55,12 +55,12 @@ const App = () => {
         <Stack.Screen name="Dashboard" component={DashboardPage} options={{ title: 'Dashboard' }} />
         <Stack.Screen name="CustomerDashboard" component={NewDashboardScreen} options={{ title: 'Customer Dashboard' }} />
         <Stack.Screen name="SelectInsurance" component={SelectInsurancePage} options={{ title: 'Select Insurance' }} />
-        <Stack.Screen name="AddPolicy" component={AddPolicyPage} options={{ title: 'Add Policy' }} />
+        
         {/* Add Policy Flow Screens */}
         <Stack.Screen name="ChooseCompany" component={ChooseCompanyScreen} />
         <Stack.Screen name="AddPolicyStep2" component={InsuranceNumberScreen} />
-        <Stack.Screen name="AddPolicyStep3" component={InsuranceNumberWithDataScreen} />
-        <Stack.Screen name="AddPolicyStep4" component={UploadPolicyScreen} />
+        {/* <Stack.Screen name="AddPolicyStep3" component={InsuranceNumberWithDataScreen} /> */}
+        <Stack.Screen name="UploadPolicy" component={UploadPolicyScreen} />
         <Stack.Screen name ="FillManually" component={FillManuallyScreen}/>
         <Stack.Screen name ="MyPolicy" component={MyPolicyScreen}/>
         <Stack.Screen name="PolicyDetails" component={PolicyOverviewScreen}/>
