@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,55 +10,139 @@ import {
   ScrollView,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Configuration - matches your backend
+const API_CONFIG = {
+  BASE_URL: 'http://10.0.2.2:5000', // Android emulator localhost
+  ENDPOINTS: {
+    SAVE_POLICY: '/v1/customer/save-pdf-reader', // Correct endpoint from your backend
+  }
+};
 
 interface DropdownOption {
   label: string;
   value: string;
 }
 
+interface UserData {
+  id: string;
+  username?: string;
+  name?: string;
+  email?: string;
+}
+
 const FillManuallyScreen = () => {
   const navigation = useNavigation<any>();
   
-  // Form state
+  // User state
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(false);
+  
+  // Form state - matching backend CustomerPolicy schema
   const [formData, setFormData] = useState({
     policyHolderName: '',
     policyNumber: '',
-    contact: '',
-    address: '',
-    insuranceCompany: '',
-    policyName: '',
-    startDate: '',
-    dueDate: '',
+    policyHolderPhone: '',
+    policyHolderAddress: '',
+    policyType: '', // This will be the insurance company
+    productName: '',
+    policyStartDate: '',
+    policyEndDate: '',
     tenure: '',
+    premiumAmount: '',
+    nomineeName: '',
+    nomineeRelationship: '',
   });
 
   // Dropdown states
   const [showInsuranceDropdown, setShowInsuranceDropdown] = useState(false);
   const [showTenureDropdown, setShowTenureDropdown] = useState(false);
+  const [showRelationshipDropdown, setShowRelationshipDropdown] = useState(false);
   const [pdfUploaded, setPdfUploaded] = useState(false);
 
   // Tab state
   const [activeTab, setActiveTab] = useState('manual');
 
+  // Insurance companies matching your backend
   const insuranceCompanies: DropdownOption[] = [
-    { label: 'LIC', value: 'lic' },
-    { label: 'HDFC Life', value: 'hdfc' },
-    { label: 'ICICI Prudential', value: 'icici' },
-    { label: 'Tata AIG', value: 'tata' },
-    { label: 'Bajaj Allianz', value: 'bajaj' },
-    { label: 'Max Life', value: 'max' },
+    { label: 'Tata AIG General Insurance Company', value: 'Tata AIG General Insurance Company' },
+    { label: 'Tata AIA Life Insurance', value: 'Tata AIA Life Insurance' },
+    { label: 'ACKO HEALTH', value: 'ACKO HEALTH' },
+    { label: 'LIC', value: 'LIC' },
+    { label: 'HDFC Life', value: 'HDFC Life' },
+    { label: 'ICICI Prudential', value: 'ICICI Prudential' },
+    { label: 'Bajaj Allianz', value: 'Bajaj Allianz' },
+    { label: 'Max Life', value: 'Max Life' },
   ];
 
   const tenureOptions: DropdownOption[] = [
-    { label: '1 Year', value: '1' },
-    { label: '2 Years', value: '2' },
-    { label: '5 Years', value: '5' },
-    { label: '10 Years', value: '10' },
-    { label: '15 Years', value: '15' },
-    { label: '20 Years', value: '20' },
+    { label: '1 Year', value: '1 Year' },
+    { label: '2 Years', value: '2 Years' },
+    { label: '3 Years', value: '3 Years' },
+    { label: '5 Years', value: '5 Years' },
+    { label: '10 Years', value: '10 Years' },
+    { label: '15 Years', value: '15 Years' },
+    { label: '20 Years', value: '20 Years' },
   ];
+
+  const relationshipOptions: DropdownOption[] = [
+    { label: 'Wife', value: 'Wife' },
+    { label: 'Husband', value: 'Husband' },
+    { label: 'Father', value: 'Father' },
+    { label: 'Mother', value: 'Mother' },
+    { label: 'Son', value: 'Son' },
+    { label: 'Daughter', value: 'Daughter' },
+    { label: 'Brother', value: 'Brother' },
+    { label: 'Sister', value: 'Sister' },
+    { label: 'Friend', value: 'Friend' },
+    { label: 'Business Partner', value: 'Business Partner' },
+    { label: 'Guardian', value: 'Guardian' },
+    { label: 'Other', value: 'Other' },
+  ];
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem('user');
+      if (userDataString) {
+        const user = JSON.parse(userDataString);
+        setUserData(user);
+        
+        // Pre-fill policy holder name if available
+        if (user.name || user.username) {
+          setFormData(prev => ({
+            ...prev,
+            policyHolderName: user.name || user.username
+          }));
+        }
+      } else {
+        // No user data found, redirect to login
+        Alert.alert(
+          'Authentication Required',
+          'Please login to continue',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              })
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      Alert.alert('Error', 'Failed to load user data');
+    }
+  };
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({
@@ -68,13 +152,18 @@ const FillManuallyScreen = () => {
   };
 
   const handleInsuranceSelect = (option: DropdownOption) => {
-    updateFormData('insuranceCompany', option.label);
+    updateFormData('policyType', option.value);
     setShowInsuranceDropdown(false);
   };
 
   const handleTenureSelect = (option: DropdownOption) => {
-    updateFormData('tenure', option.label);
+    updateFormData('tenure', option.value);
     setShowTenureDropdown(false);
+  };
+
+  const handleRelationshipSelect = (option: DropdownOption) => {
+    updateFormData('nomineeRelationship', option.value);
+    setShowRelationshipDropdown(false);
   };
 
   const handleUploadPDF = () => {
@@ -88,23 +177,188 @@ const FillManuallyScreen = () => {
     Alert.alert('Select PDF', 'PDF selection functionality would be implemented here');
   };
 
-  const handleAddPolicy = () => {
-    // Validate form
-    const requiredFields = ['policyHolderName', 'policyNumber', 'contact', 'insuranceCompany'];
+  const formatDateForBackend = (date: string) => {
+    // Convert DD-MM-YYYY to DD/MM/YYYY format expected by backend
+    if (!date) return '';
+    return date.replace(/-/g, '/');
+  };
+
+  const validateForm = () => {
+    const requiredFields = [
+      'policyHolderName',
+      'policyNumber',
+      'policyHolderPhone',
+      'policyType',
+      'productName',
+      'policyStartDate',
+      'policyEndDate',
+      'tenure'
+    ];
+    
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
     
     if (missingFields.length > 0) {
-      Alert.alert('Missing Information', 'Please fill all required fields');
+      const fieldNames = missingFields.map(field => {
+        switch(field) {
+          case 'policyHolderName': return 'Policy Holder Name';
+          case 'policyNumber': return 'Policy Number';
+          case 'policyHolderPhone': return 'Contact';
+          case 'policyHolderAddress': return 'Address';
+          case 'policyType': return 'Insurance Company';
+          case 'productName': return 'Policy Name';
+          case 'policyStartDate': return 'Start Date';
+          case 'policyEndDate': return 'Due Date';
+          case 'tenure': return 'Tenure';
+          default: return field;
+        }
+      });
+      
+      Alert.alert(
+        'Missing Information',
+        `Please fill the following fields:\n${fieldNames.join('\n')}`
+      );
+      return false;
+    }
+    
+    // Validate contact number
+    const contactRegex = /^[0-9]{10}$/;
+    if (!contactRegex.test(formData.policyHolderPhone)) {
+      Alert.alert('Invalid Contact', 'Please enter a valid 10-digit contact number');
+      return false;
+    }
+    
+    // Validate date format (DD-MM-YYYY)
+    const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-\d{4}$/;
+    if (!dateRegex.test(formData.policyStartDate)) {
+      Alert.alert('Invalid Date', 'Please enter start date in DD-MM-YYYY format');
+      return false;
+    }
+    if (!dateRegex.test(formData.policyEndDate)) {
+      Alert.alert('Invalid Date', 'Please enter due date in DD-MM-YYYY format');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleAddPolicy = async () => {
+    // Validate form
+    if (!validateForm()) {
       return;
     }
 
-    // Submit form
-    Alert.alert('Success', 'Policy added successfully!', [
-      { text: 'OK', onPress: () => navigation.navigate('CustomerDashboard') }
-    ]);
+    if (!userData?.id) {
+      Alert.alert('Error', 'User not authenticated. Please login again.');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Format dates for backend
+      const formattedStartDate = formatDateForBackend(formData.policyStartDate);
+      const formattedEndDate = formatDateForBackend(formData.policyEndDate);
+      
+      // Prepare data matching backend CustomerPolicy schema
+      const payload = {
+        policyHolder: {
+          customerId: userData.id,
+          policyHolderName: formData.policyHolderName,
+          policyHolderPhone: formData.policyHolderPhone,
+          policyHolderAddress: formData.policyHolderAddress || 'Not provided',
+          policyNumber: formData.policyNumber,
+          productName: formData.productName,
+          policyPeriod: `From ${formattedStartDate} to ${formattedEndDate}`,
+          tenure: formData.tenure,
+          endDate: formattedEndDate,
+          policyType: formData.policyType,
+          premiumAmount: formData.premiumAmount || '0',
+          nomineeName: formData.nomineeName || '',
+          nomineeRelationship: formData.nomineeRelationship || ''
+        },
+        insuredMembers: [] // Empty array for manual entry
+      };
+
+      console.log('Submitting policy data:', JSON.stringify(payload, null, 2));
+
+      // Use the correct endpoint from your backend
+      const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVE_POLICY}/${userData.id}`;
+      console.log('API URL:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('Response status:', response.status);
+      
+      // Check content type
+      const contentType = response.headers.get('content-type');
+      let responseData;
+      
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+        console.log('API Response:', responseData);
+      } else {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText.substring(0, 500));
+        throw new Error(`Server error: Expected JSON but got ${contentType}`);
+      }
+
+      if (response.ok) {
+        Alert.alert(
+          'Success',
+          responseData.message || 'Policy added successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Clear form
+                setFormData({
+                  policyHolderName: userData.name || userData.username || '',
+                  policyNumber: '',
+                  policyHolderPhone: '',
+                  policyHolderAddress: '',
+                  policyType: '',
+                  productName: '',
+                  policyStartDate: '',
+                  policyEndDate: '',
+                  tenure: '',
+                  premiumAmount: '',
+                  nomineeName: '',
+                  nomineeRelationship: '',
+                });
+                setPdfUploaded(false);
+                
+                // Navigate to dashboard or policies screen
+                navigation.navigate('CustomerDashboard');
+              }
+            }
+          ]
+        );
+      } else {
+        const errorMessage = responseData?.error || responseData?.message || 'Failed to add policy';
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error adding policy:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to add policy. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-    const handleTabChange = (tab: string) => {
+  const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === 'upload') {
       navigation.navigate('ChooseCompany');
@@ -176,20 +430,17 @@ const FillManuallyScreen = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Manual Form Header */}
-        {/* <View style={styles.formHeader}>
-          <View style={styles.formHeaderIcon}>
-            <Text style={styles.formHeaderEmoji}>➕</Text>
-          </View>
-          <Text style={styles.formHeaderText}>Add Policy Manually</Text>
-        </View> */}
-
         {/* Form Fields */}
         <View style={styles.formContainer}>
           
+          {/* Policy Holder Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Policy Holder Information</Text>
+          </View>
+
           {/* Policy Holder Name */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Policy Holder Name</Text>
+            <Text style={styles.fieldLabel}>Policy Holder Name *</Text>
             <View style={styles.inputContainer}>
               <Text style={styles.inputIcon}>👤</Text>
               <TextInput
@@ -202,32 +453,18 @@ const FillManuallyScreen = () => {
             </View>
           </View>
 
-          {/* Policy Number */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Policy Number</Text>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>🆔</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter Policy Number"
-                value={formData.policyNumber}
-                onChangeText={(text) => updateFormData('policyNumber', text)}
-                placeholderTextColor="#A0B7B3"
-              />
-            </View>
-          </View>
-
           {/* Contact */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Contact</Text>
+            <Text style={styles.fieldLabel}>Contact Number *</Text>
             <View style={styles.inputContainer}>
               <Text style={styles.inputIcon}>📞</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter Contact Number"
-                value={formData.contact}
-                onChangeText={(text) => updateFormData('contact', text)}
+                placeholder="Enter 10-digit Contact Number"
+                value={formData.policyHolderPhone}
+                onChangeText={(text) => updateFormData('policyHolderPhone', text)}
                 keyboardType="phone-pad"
+                maxLength={10}
                 placeholderTextColor="#A0B7B3"
               />
             </View>
@@ -240,9 +477,29 @@ const FillManuallyScreen = () => {
               <Text style={styles.inputIcon}>📍</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter Current Address"
-                value={formData.address}
-                onChangeText={(text) => updateFormData('address', text)}
+                placeholder="Enter Current Address (Optional)"
+                value={formData.policyHolderAddress}
+                onChangeText={(text) => updateFormData('policyHolderAddress', text)}
+                placeholderTextColor="#A0B7B3"
+              />
+            </View>
+          </View>
+
+          {/* Policy Details Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Policy Details</Text>
+          </View>
+
+          {/* Policy Number */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Policy Number *</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputIcon}>🆔</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter Policy Number"
+                value={formData.policyNumber}
+                onChangeText={(text) => updateFormData('policyNumber', text)}
                 placeholderTextColor="#A0B7B3"
               />
             </View>
@@ -250,7 +507,7 @@ const FillManuallyScreen = () => {
 
           {/* Insurance Company Dropdown */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Insurance Company</Text>
+            <Text style={styles.fieldLabel}>Insurance Company *</Text>
             <TouchableOpacity 
               style={styles.dropdownButton}
               onPress={() => setShowInsuranceDropdown(true)}
@@ -258,24 +515,40 @@ const FillManuallyScreen = () => {
               <Text style={styles.dropdownIcon}>🏢</Text>
               <Text style={[
                 styles.dropdownText, 
-                !formData.insuranceCompany && styles.placeholderText
+                !formData.policyType && styles.placeholderText
               ]}>
-                {formData.insuranceCompany || 'Select Insurance Company'}
+                {formData.policyType || 'Select Insurance Company'}
               </Text>
               <Text style={styles.dropdownArrow}>▼</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Policy Name */}
+          {/* Policy Name/Product Name */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Policy Name</Text>
+            <Text style={styles.fieldLabel}>Policy Name *</Text>
             <View style={styles.inputContainer}>
               <Text style={styles.inputIcon}>📄</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter Policy Name"
-                value={formData.policyName}
-                onChangeText={(text) => updateFormData('policyName', text)}
+                placeholder="Enter Policy/Product Name"
+                value={formData.productName}
+                onChangeText={(text) => updateFormData('productName', text)}
+                placeholderTextColor="#A0B7B3"
+              />
+            </View>
+          </View>
+
+          {/* Premium Amount */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Premium Amount</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputIcon}>₹</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter Premium Amount (Optional)"
+                value={formData.premiumAmount}
+                onChangeText={(text) => updateFormData('premiumAmount', text)}
+                keyboardType="numeric"
                 placeholderTextColor="#A0B7B3"
               />
             </View>
@@ -283,37 +556,59 @@ const FillManuallyScreen = () => {
 
           {/* Start Date */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Start Date</Text>
+            <Text style={styles.fieldLabel}>Policy Start Date *</Text>
             <View style={styles.inputContainer}>
               <Text style={styles.inputIcon}>📅</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="DD-MM-YYYY"
-                value={formData.startDate}
-                onChangeText={(text) => updateFormData('startDate', text)}
+                value={formData.policyStartDate}
+                onChangeText={(text) => {
+                  // Auto-format date
+                  let formatted = text.replace(/[^0-9]/g, '');
+                  if (formatted.length >= 3 && formatted.length <= 4) {
+                    formatted = formatted.slice(0, 2) + '-' + formatted.slice(2);
+                  } else if (formatted.length >= 5) {
+                    formatted = formatted.slice(0, 2) + '-' + formatted.slice(2, 4) + '-' + formatted.slice(4, 8);
+                  }
+                  updateFormData('policyStartDate', formatted);
+                }}
                 placeholderTextColor="#A0B7B3"
+                maxLength={10}
+                keyboardType="numeric"
               />
             </View>
           </View>
 
-          {/* Due Date */}
+          {/* End Date */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Due Date</Text>
+            <Text style={styles.fieldLabel}>Policy End Date *</Text>
             <View style={styles.inputContainer}>
               <Text style={styles.inputIcon}>📅</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="DD-MM-YYYY"
-                value={formData.dueDate}
-                onChangeText={(text) => updateFormData('dueDate', text)}
+                value={formData.policyEndDate}
+                onChangeText={(text) => {
+                  // Auto-format date
+                  let formatted = text.replace(/[^0-9]/g, '');
+                  if (formatted.length >= 3 && formatted.length <= 4) {
+                    formatted = formatted.slice(0, 2) + '-' + formatted.slice(2);
+                  } else if (formatted.length >= 5) {
+                    formatted = formatted.slice(0, 2) + '-' + formatted.slice(2, 4) + '-' + formatted.slice(4, 8);
+                  }
+                  updateFormData('policyEndDate', formatted);
+                }}
                 placeholderTextColor="#A0B7B3"
+                maxLength={10}
+                keyboardType="numeric"
               />
             </View>
           </View>
 
           {/* Tenure Dropdown */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Tenure</Text>
+            <Text style={styles.fieldLabel}>Policy Tenure *</Text>
             <TouchableOpacity 
               style={styles.dropdownButton}
               onPress={() => setShowTenureDropdown(true)}
@@ -329,9 +624,47 @@ const FillManuallyScreen = () => {
             </TouchableOpacity>
           </View>
 
+          {/* Nominee Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Nominee Details (Optional)</Text>
+          </View>
+
+          {/* Nominee Name */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Nominee Name</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputIcon}>👥</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter Nominee Name"
+                value={formData.nomineeName}
+                onChangeText={(text) => updateFormData('nomineeName', text)}
+                placeholderTextColor="#A0B7B3"
+              />
+            </View>
+          </View>
+
+          {/* Nominee Relationship */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Nominee Relationship</Text>
+            <TouchableOpacity 
+              style={styles.dropdownButton}
+              onPress={() => setShowRelationshipDropdown(true)}
+            >
+              <Text style={styles.dropdownIcon}>💑</Text>
+              <Text style={[
+                styles.dropdownText, 
+                !formData.nomineeRelationship && styles.placeholderText
+              ]}>
+                {formData.nomineeRelationship || 'Select Relationship'}
+              </Text>
+              <Text style={styles.dropdownArrow}>▼</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Upload Insurance PDF */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.uploadSectionTitle}>📤 Upload Insurance PDF</Text>
+            <Text style={styles.uploadSectionTitle}>📤 Upload Insurance PDF (Optional)</Text>
             
             <TouchableOpacity 
               style={styles.uploadContainer}
@@ -341,12 +674,12 @@ const FillManuallyScreen = () => {
                 {pdfUploaded ? (
                   <>
                     <View style={styles.uploadSuccessIcon}>
-                      <Text style={styles.checkmark}>✓</Text>
+                      <Text style={styles.checkmark}>✔</Text>
                     </View>
                     <Text style={styles.uploadSuccessText}>PDF Added</Text>
                     <Text style={styles.uploadSuccessSubtext}>policyDocument.pdf</Text>
                     <TouchableOpacity style={styles.selectButton}>
-                      <Text style={styles.selectButtonText}>Select</Text>
+                      <Text style={styles.selectButtonText}>Change PDF</Text>
                     </TouchableOpacity>
                   </>
                 ) : (
@@ -366,9 +699,20 @@ const FillManuallyScreen = () => {
           </View>
 
           {/* Add Policy Button */}
-          <TouchableOpacity style={styles.addPolicyButton} onPress={handleAddPolicy}>
-            <Text style={styles.addPolicyButtonText}>✓ Add Policy</Text>
+          <TouchableOpacity 
+            style={[styles.addPolicyButton, loading && styles.disabledButton]} 
+            onPress={handleAddPolicy}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.addPolicyButtonText}>✔ Add Policy</Text>
+            )}
           </TouchableOpacity>
+          
+          {/* Required Fields Note */}
+          <Text style={styles.requiredNote}>* Required fields</Text>
         </View>
       </ScrollView>
 
@@ -385,6 +729,13 @@ const FillManuallyScreen = () => {
         isVisible={showTenureDropdown}
         onSelect={handleTenureSelect}
         onClose={() => setShowTenureDropdown(false)}
+      />
+
+      <Dropdown
+        options={relationshipOptions}
+        isVisible={showRelationshipDropdown}
+        onSelect={handleRelationshipSelect}
+        onClose={() => setShowRelationshipDropdown(false)}
       />
     </SafeAreaView>
   );
@@ -456,36 +807,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  formHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  formHeaderIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F0F9F8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  formHeaderEmoji: {
-    fontSize: 16,
-  },
-  formHeaderText: {
-    fontSize: 16,
-    color: '#4ECDC4',
-    fontWeight: 'bold',
-  },
   formContainer: {
     backgroundColor: 'white',
     borderRadius: 16,
@@ -495,6 +816,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 6,
+  },
+  sectionHeader: {
+    marginTop: 20,
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8F6F3',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4ECDC4',
   },
   fieldContainer: {
     marginBottom: 20,
@@ -524,12 +857,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#2D3748',
+    paddingVertical: 12,
   },
   dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#1893B0',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -645,10 +979,20 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
+  disabledButton: {
+    opacity: 0.7,
+  },
   addPolicyButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  requiredNote: {
+    fontSize: 12,
+    color: '#718096',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
   },
   // Dropdown Modal Styles
   dropdownOverlay: {
