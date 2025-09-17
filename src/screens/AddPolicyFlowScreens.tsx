@@ -1,3 +1,18 @@
+/**
+ * AddPolicyFlowScreens.tsx
+ * 
+ * IMPORTANT: This code uses @react-native-documents/picker
+ * Installation:
+ * npm install @react-native-documents/picker
+ * 
+ * For iOS: cd ios && pod install
+ * 
+ * Requirements:
+ * - React Native 0.78+ requires this new package
+ * - iOS 14 or later
+ * - For Expo: SDK 52+
+ */
+
 import React, { useState } from 'react';
 import {
   View,
@@ -9,21 +24,33 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+// CORRECT IMPORT: Using named exports from @react-native-documents/picker
+import { pick, types } from '@react-native-documents/picker';
+import { useAuth } from '../context/AuthContext';
 
-// Screen 1: Choose Insurance Company
+// ======================
+// Screen 1: Choose Company
+// ======================
+// AddPolicyFlowScreens.tsx - Quick temporary fix
+// Just replace the ChooseCompanyScreen function with this:
+
 const ChooseCompanyScreen = () => {
   const navigation = useNavigation<any>();
   const [selectedCompany, setSelectedCompany] = useState('');
-  const [activeTab, setActiveTab] = useState('upload');
   const [searchQuery, setSearchQuery] = useState('');
-
+  
+  // ✅ TEMPORARY FIX: Use your actual customerId from database
+  const customerId = '68ada8d22071b4b868cd7951'; // Your actual customerId from the database
+  
   const insuranceCompanies = [
+    'Tata AIA Life Insurance',
+    'Tata AIG General Insurance Company',
     'LIC',
     'HDFC Life',
     'ICICI Prudential',
-    'Tata AIG',
     'Bajaj Allianz',
     'Max Life',
   ];
@@ -37,58 +64,33 @@ const ChooseCompanyScreen = () => {
       Alert.alert('Selection Required', 'Please choose an insurance company');
       return;
     }
-    navigation.navigate('AddPolicyStep2', { company: selectedCompany });
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    if (tab === 'manual') {
-      navigation.navigate('FillManually');
-    }
+    
+    console.log('Using customerId:', customerId); // This should now show your actual ID
+    
+    navigation.navigate('AddPolicyStep2', {
+      company: selectedCompany,
+      customerId, // This will now be '68ada8d22071b4b868cd7951'
+    });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Policy</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Tab Bar */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'upload' && styles.activeTab]}
-          onPress={() => handleTabChange('upload')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.tabText, activeTab === 'upload' && styles.activeTabText]}>
-            📤 Upload Policy
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'manual' && styles.activeTab]}
-          onPress={() => handleTabChange('manual')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.tabText, activeTab === 'manual' && styles.activeTabText]}>
-            ✏️ Fill Manually
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={styles.content}>
-        {/* Search Section */}
+        <Text style={styles.headerTitle}>Choose Your Insurance Company</Text>
+
+        {/* Debug Info - This should now show your actual customerId */}
+        <View style={{ backgroundColor: '#e8f5e8', padding: 8, margin: 8, borderRadius: 4 }}>
+          <Text style={{ fontSize: 12, color: '#2d5a2d' }}>
+            ✅ Customer ID: {customerId}
+          </Text>
+        </View>
+
+        {/* Search */}
         <View style={styles.searchSection}>
-          <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Choose Your Insurance Company"
+            placeholder="Search company"
             placeholderTextColor="#A0B7B3"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -97,472 +99,342 @@ const ChooseCompanyScreen = () => {
 
         {/* Company List */}
         <View style={styles.companyList}>
-          {filteredCompanies.map((company, index) => (
+          {filteredCompanies.map((company, idx) => (
             <TouchableOpacity
-              key={index}
+              key={idx}
               style={[
                 styles.companyItem,
-                selectedCompany === company && styles.selectedCompanyItem
+                selectedCompany === company && styles.selectedCompanyItem,
               ]}
               onPress={() => setSelectedCompany(company)}
             >
-              <Text style={[
-                styles.companyText,
-                selectedCompany === company && styles.selectedCompanyText
-              ]}>
+              <Text
+                style={[
+                  styles.companyText,
+                  selectedCompany === company && styles.selectedCompanyText,
+                ]}
+              >
                 {company}
               </Text>
-              <Text style={styles.dropdownArrow}>▼</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Continue Button */}
-        <TouchableOpacity 
-          style={[styles.continueButton, !selectedCompany && styles.disabledButton]} 
+        {/* Continue */}
+        <TouchableOpacity
+          style={[styles.continueButton, !selectedCompany && styles.disabledButton]}
           onPress={handleContinue}
           disabled={!selectedCompany}
-          activeOpacity={0.8}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
-
-        {/* Progress Indicator */}
-        <View style={styles.progressSection}>
-          <View style={styles.progressCircle}>
-            <View style={styles.progressInner}>
-              <Text style={styles.progressText}>1 of 3</Text>
-            </View>
-          </View>
-          <Text style={styles.progressLabel}>Choose Company</Text>
-          <Text style={styles.progressDescription}>Select your insurance provider to proceed</Text>
-        </View>
-
-        {/* Navigation */}
-        <View style={styles.navigationSection}>
-          <TouchableOpacity 
-            style={styles.navButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navText}>← Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.navButton} 
-            onPress={handleContinue}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navText}>Next →</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// Screen 2: Insurance Number Input
-const InsuranceNumberScreen = () => {
+// ======================
+// Screen 2: Insurance Number
+// ======================
+const InsuranceNumberScreen = ({ route }: any) => {
   const navigation = useNavigation<any>();
+  const { company, customerId } = route.params || {};
   const [insuranceNumber, setInsuranceNumber] = useState('');
-  const [activeTab, setActiveTab] = useState('upload');
 
   const handleContinue = () => {
-    // Navigate directly to Upload Policy screen (Step 3)
-    navigation.navigate('UploadPolicy', { insuranceNumber });
+    navigation.navigate('UploadPolicy', {
+      company,
+      insuranceNumber,
+      customerId,
+    });
   };
 
   const handleSkip = () => {
-    setInsuranceNumber(''); // Clear any entered number
-    // Navigate directly to Upload Policy screen (Step 3) with empty number
-    navigation.navigate('UploadPolicy', { insuranceNumber: '' });
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    if (tab === 'manual') {
-      navigation.navigate('FillManually');
-    }
+    navigation.navigate('UploadPolicy', {
+      company,
+      insuranceNumber: '',
+      customerId,
+    });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Policy</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Tab Bar */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'upload' && styles.activeTab]}
-          onPress={() => handleTabChange('upload')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.tabText, activeTab === 'upload' && styles.activeTabText]}>
-            📤 Upload Policy
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'manual' && styles.activeTab]}
-          onPress={() => handleTabChange('manual')}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.tabText, activeTab === 'manual' && styles.activeTabText]}>
-            ✏️ Fill Manually
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={styles.content}>
-        {/* Input Section */}
-        <View style={styles.inputSection}>
-          <View style={styles.inputHeader}>
-            <Text style={styles.inputIcon}>📄</Text>
-            <Text style={styles.inputLabel}>Insurance Number (Optional)</Text>
-          </View>
-          
-          <Text style={styles.inputDescription}>
-            Enter your policy number if you have it. Don't worry if you don't have it - you can skip this step!
-          </Text>
-          
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter Insurance Number"
-            value={insuranceNumber}
-            onChangeText={setInsuranceNumber}
-            autoCapitalize="characters"
-          />
-        </View>
+        <Text style={styles.headerTitle}>Insurance Number (Optional)</Text>
 
-        {/* Button Row - Updated with better sizing */}
+        <TextInput
+          style={styles.textInput}
+          placeholder="Enter Insurance Number"
+          value={insuranceNumber}
+          onChangeText={setInsuranceNumber}
+          autoCapitalize="characters"
+        />
+
         <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.skipButton}
-            onPress={handleSkip}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
             <Text style={styles.skipButtonText}>Skip</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.continueButtonInRow}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
+
+          <TouchableOpacity style={styles.continueButtonInRow} onPress={handleContinue}>
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Progress Indicator - Fixed to show 2 of 3 */}
-        <View style={styles.progressSection}>
-          <View style={styles.progressCircle}>
-            <View style={styles.progressInner}>
-              <Text style={styles.progressText}>2 of 3</Text>
-            </View>
-          </View>
-          <Text style={styles.progressLabel}>Insurance Number</Text>
-          <Text style={styles.progressDescription}>Add your policy number reference (optional)</Text>
-        </View>
-
-        {/* Navigation */}
-        <View style={styles.navigationSection}>
-          <TouchableOpacity 
-            style={styles.navButton} 
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navText}>← Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.navButton} 
-            onPress={handleSkip}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navText}>Skip →</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// Screen 3: Upload Policy Document (Final Step)
+// ======================
+// Screen 3: Upload & Save Policy
+// ======================
 const UploadPolicyScreen = ({ route }: any) => {
   const navigation = useNavigation<any>();
+  const { company, insuranceNumber, customerId } = route.params || {};
+
   const [isUploading, setIsUploading] = useState(false);
-  
-  // Get params from previous screens
-  const { company, insuranceNumber } = route.params || {};
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [pdfData, setPdfData] = useState<any>(null);
+  const [insuredMembers, setInsuredMembers] = useState<any[]>([]);
 
-  const handleUpload = () => {
-    // Handle file upload logic here
-    Alert.alert('Upload', 'File upload functionality would be implemented here');
+  /** Step 1: Pick + upload PDF using the NEW @react-native-documents/picker API */
+  const handleUpload = async () => {
+    try {
+      // NEW API: Using pick() with types.pdf
+      // Note: pick() always returns an array, no more pickSingle
+      const result = await pick({
+        type: [types.pdf],
+        copyTo: 'cachesDirectory', // Important for file system access
+      });
+
+      // The new API always returns an array, get the first file
+      const res = result[0];
+
+      if (!res) {
+        console.log('No file selected');
+        return;
+      }
+
+      const fileName = res.name ?? 'unknown.pdf';
+      const fileUri = res.uri ?? '';
+      const fileType = res.type ?? 'application/pdf';
+
+      if (!fileName.toLowerCase().endsWith('.pdf')) {
+        Alert.alert('Error', 'Please select a PDF file');
+        return;
+      }
+
+      setUploadedFileName(fileName);
+      setIsUploading(true);
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: fileUri,
+        type: fileType,
+        name: fileName,
+      } as any);
+      formData.append('insuranceCompney', company); // Note: There's a typo in the field name (should be insuranceCompany)
+
+      const response = await fetch(
+        `http://10.0.2.2:5000/v1/customer/pdf-reader/${customerId}`,
+        {
+          method: 'POST',
+          body: formData,
+          // Don't set Content-Type header, let the browser set it with boundary
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Server response:', errorData);
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPdfData(data.policyHolder || {});
+      setInsuredMembers(data.insuredMembers || []);
+      Alert.alert('Success', 'PDF parsed successfully!');
+    } catch (err: any) {
+      // The new package doesn't have an isCancel method, check the error message
+      if (err.message?.includes('User canceled') || err.message?.includes('cancelled')) {
+        console.log('User cancelled picker');
+      } else {
+        console.error('Upload error:', err);
+        Alert.alert('Error', `Failed to upload or parse PDF: ${err.message}`);
+      }
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleCompleteSetup = () => {
-    navigation.navigate('Dashboard');
-  };
+  /** Step 2: Save parsed policy */
+  const handleSavePolicy = async () => {
+  if (!pdfData?.policyNumber) {
+    Alert.alert('Error', 'No policy data found. Please upload a PDF first.');
+    return;
+  }
 
-  const handleCancel = () => {
-    navigation.goBack();
-  };
+  try {
+    setIsUploading(true);
+    
+    const payload = {
+      policyHolder: {
+        customerId,
+        insuranceNumber,
+        ...pdfData,
+      },
+      insuredMembers,
+    };
+
+    // ✅ Use EXACT same URL format as your working upload
+    const saveUrl = `http://10.0.2.2:5000/v1/customer/save-pdf-reader/${customerId}`;
+    console.log('💾 Save URL:', saveUrl);
+    console.log('💾 Payload:', JSON.stringify(payload, null, 2));
+
+    const response = await fetch(saveUrl, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log('💾 Response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    const result = await response.json();
+    console.log('💾 Success:', result);
+
+    Alert.alert('Success', 'Policy saved successfully!');
+    navigation.navigate('CustomerDashboard');
+
+  } catch (err) {
+    console.error('💾 Save error:', err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    Alert.alert('Save Error', `Failed to save: ${errorMessage}`);
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Policy</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Tab Bar */}
-      <View style={styles.tabContainer}>
-        <View style={[styles.tab, styles.activeTab]}>
-          <Text style={styles.activeTabText}>📤 Upload Policy</Text>
-        </View>
-        <View style={styles.tab}>
-          <Text style={styles.tabText}>✏️ Fill Manually</Text>
-        </View>
-      </View>
-
       <ScrollView style={styles.content}>
-        {/* Upload Section */}
-        <View style={styles.uploadSection}>
-          <View style={styles.uploadHeader}>
-            <Text style={styles.uploadIcon}>📤</Text>
-            <Text style={styles.uploadLabel}>Upload Your Policy</Text>
-          </View>
-          <Text style={styles.uploadDescription}>
-            Choose how you'd like to add your policy document
+        <Text style={styles.headerTitle}>Upload Your Policy</Text>
+        
+        <TouchableOpacity 
+          style={[styles.uploadOption, isUploading && styles.uploadingOption]} 
+          onPress={handleUpload}
+          disabled={isUploading}
+        >
+          <Text style={styles.uploadOptionTitle}>📄 Import PDF</Text>
+          <Text style={styles.uploadOptionSubtitle}>
+            {isUploading
+              ? 'Uploading...'
+              : uploadedFileName || 'Select a PDF to upload'}
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        {/* Upload Options */}
-        <View style={styles.uploadOptionsContainer}>
-          <TouchableOpacity 
-            style={styles.uploadOption} 
-            onPress={handleUpload}
-            activeOpacity={0.8}
-          >
-            <View style={styles.uploadOptionIcon}>
-              <Text style={styles.uploadOptionEmoji}>📷</Text>
-            </View>
-            <View style={styles.uploadOptionContent}>
-              <Text style={styles.uploadOptionTitle}>Take a picture</Text>
-              <Text style={styles.uploadOptionSubtitle}>
-                Get fast and automated policy details
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.uploadOption} 
-            onPress={handleUpload}
-            activeOpacity={0.8}
-          >
-            <View style={styles.uploadOptionIcon}>
-              <Text style={styles.uploadOptionEmoji}>📄</Text>
-            </View>
-            <View style={styles.uploadOptionContent}>
-              <Text style={styles.uploadOptionTitle}>Import PDF</Text>
-              <Text style={styles.uploadOptionSubtitle}>
-                Don't let the file of your policy be deleted
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.completeButton} 
-            onPress={handleCompleteSetup}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.completeButtonText}>Complete Setup</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.cancelButton} 
-            onPress={handleCancel}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Progress Indicator - Fixed to show 3 of 3 */}
-        <View style={styles.progressSection}>
-          <View style={styles.progressCircle}>
-            <View style={styles.progressInner}>
-              <Text style={styles.progressText}>3 of 3</Text>
-            </View>
+        {isUploading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4ECDC4" />
           </View>
-          <Text style={styles.progressLabel}>Upload Documents</Text>
-          <Text style={styles.progressDescription}>
-            Together we're validating your documents
-          </Text>
-        </View>
+        )}
 
-        {/* Navigation */}
-        <View style={styles.navigationSection}>
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.navText}>← Previous</Text>
+        {pdfData && !isUploading && (
+          <View style={styles.pdfDataContainer}>
+            <Text style={styles.pdfDataTitle}>Policy Details</Text>
+            <Text style={styles.pdfDataText}>
+              Policy Number: {pdfData.policyNumber || 'N/A'}
+            </Text>
+            {pdfData.policyHolderName && (
+              <Text style={styles.pdfDataText}>
+                Policy Holder: {pdfData.policyHolderName}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {pdfData && (
+          <TouchableOpacity
+            style={[styles.completeButton, isUploading && styles.disabledButton]}
+            onPress={handleSavePolicy}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.completeButtonText}>Save to Dashboard</Text>
+            )}
           </TouchableOpacity>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
+// ======================
+// Styles
+// ======================
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9F8',
+  container: { 
+    flex: 1, 
+    backgroundColor: '#F0F9F8' 
   },
-  header: {
-    backgroundColor: '#4ECDC4',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+  content: { 
+    flex: 1, 
+    padding: 20 
   },
-  backButton: {
-    padding: 8,
-  },
-  backArrow: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  placeholder: {
-    width: 40,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    marginHorizontal: 20,
-    marginTop: 10,
-    borderRadius: 12,
-    padding: 4,
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  activeTab: {
-    backgroundColor: '#4ECDC4',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#61BACA',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    fontSize: 14,
-    color: 'white',
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
+  headerTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#4ECDC4', 
+    marginBottom: 16 
   },
   searchSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: 'white',
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     marginBottom: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
-  searchIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  searchInput: { 
+    fontSize: 16, 
+    color: '#4ECDC4' 
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#4ECDC4',
-    fontWeight: '600',
-  },
-  companyList: {
-    marginBottom: 20,
+  companyList: { 
+    marginBottom: 20 
   },
   companyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
-  selectedCompanyItem: {
-    backgroundColor: '#4ECDC4',
+  selectedCompanyItem: { 
+    backgroundColor: '#4ECDC4' 
   },
-  companyText: {
-    fontSize: 16,
-    color: '#4ECDC4',
-    fontWeight: '600',
+  companyText: { 
+    fontSize: 16, 
+    color: '#4ECDC4', 
+    fontWeight: '600' 
   },
-  selectedCompanyText: {
-    color: 'white',
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: '#61BACA',
-  },
-  inputSection: {
-    marginBottom: 20,
-  },
-  inputHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  inputIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  inputLabel: {
-    fontSize: 16,
-    color: '#4ECDC4',
-    fontWeight: '600',
+  selectedCompanyText: { 
+    color: 'white' 
   },
   textInput: {
     backgroundColor: 'white',
@@ -570,243 +442,115 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     color: '#4ECDC4',
-    shadowColor: '#4ECDC4',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
-  uploadSection: {
+  buttonRow: { 
+    flexDirection: 'row', 
+    marginTop: 20, 
+    gap: 12 
+  },
+  skipButton: {
+    flex: 0.4,
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    padding: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  skipButtonText: { 
+    color: '#4ECDC4', 
+    fontWeight: '600' 
+  },
+  continueButtonInRow: {
+    flex: 0.6,
+    backgroundColor: '#4ECDC4',
+    padding: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  continueButtonText: { 
+    color: 'white', 
+    fontWeight: 'bold' 
+  },
+  continueButton: {
+    backgroundColor: '#4ECDC4',
+    padding: 16,
+    borderRadius: 25,
     alignItems: 'center',
     marginBottom: 20,
   },
-  uploadHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  uploadIcon: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  uploadLabel: {
-    fontSize: 18,
-    color: '#4ECDC4',
-    fontWeight: 'bold',
-  },
-  uploadDescription: {
-    fontSize: 14,
-    color: '#61BACA',
-    textAlign: 'center',
-  },
-  uploadOptionsContainer: {
-    marginBottom: 20,
+  disabledButton: { 
+    backgroundColor: '#B0D9D5',
+    opacity: 0.7,
   },
   uploadOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 16,
     marginBottom: 12,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
-  uploadOptionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F0F9F8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  uploadingOption: {
+    opacity: 0.7,
   },
-  uploadOptionEmoji: {
-    fontSize: 24,
+  uploadOptionTitle: { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    color: '#4ECDC4' 
   },
-  uploadOptionContent: {
-    flex: 1,
-  },
-  uploadOptionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
-    marginBottom: 4,
-  },
-  uploadOptionSubtitle: {
-    fontSize: 14,
-    color: '#61BACA',
-  },
-  continueButton: {
-    backgroundColor: '#4ECDC4',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-    minHeight: 50,
-  },
-  disabledButton: {
-    backgroundColor: '#B0D9D5',
-    shadowOpacity: 0.1,
-  },
-  continueButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  actionButtonsContainer: {
-    marginBottom: 20,
+  uploadOptionSubtitle: { 
+    fontSize: 14, 
+    color: '#61BACA', 
+    marginTop: 4 
   },
   completeButton: {
     backgroundColor: '#4ECDC4',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    padding: 16,
     borderRadius: 25,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-    minHeight: 50,
+    marginTop: 12,
   },
-  completeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  completeButtonText: { 
+    color: 'white', 
+    fontWeight: 'bold' 
   },
-  cancelButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 25,
+  loadingContainer: {
+    padding: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#4ECDC4',
-    minHeight: 50,
   },
-  cancelButtonText: {
-    color: '#4ECDC4',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  progressCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#4ECDC4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  progressInner: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  pdfDataContainer: {
     backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  progressText: {
-    fontSize: 12,
+  pdfDataTitle: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#4ECDC4',
+    marginBottom: 8,
   },
-  progressLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
+  pdfDataText: {
+    fontSize: 14,
+    color: '#333',
     marginBottom: 4,
-  },
-  progressDescription: {
-    fontSize: 14,
-    color: '#61BACA',
-    textAlign: 'center',
-  },
-  navigationSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  navButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minWidth: 80,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navText: {
-    fontSize: 14,
-    color: '#4ECDC4',
-    fontWeight: '600',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    gap: 12,
-  },
-  skipButton: {
-    flex: 0.4, // Smaller flex value for skip button
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#4ECDC4',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
-  },
-  skipButtonText: {
-    color: '#4ECDC4',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  continueButtonInRow: {
-    flex: 0.6, // Larger flex value for continue button
-    backgroundColor: '#4ECDC4',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#4ECDC4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-    minHeight: 50,
-  },
-  inputDescription: {
-    fontSize: 14,
-    color: '#61BACA',
-    marginBottom: 16,
-    lineHeight: 20,
   },
 });
 
-// Export only the necessary screens (removed InsuranceNumberWithDataScreen)
-export {
-  ChooseCompanyScreen,
-  InsuranceNumberScreen,
-  UploadPolicyScreen,
-};
+// ======================
+// Exports
+// ======================
+export { ChooseCompanyScreen, InsuranceNumberScreen, UploadPolicyScreen };

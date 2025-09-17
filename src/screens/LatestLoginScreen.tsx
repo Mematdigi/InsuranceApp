@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from '../context/AuthContext';
+
 
 const { width, height } = Dimensions.get("window");
 const API_BASE = "http://10.0.2.2:5000/api";
@@ -37,6 +39,7 @@ const LoginScreen = () => {
 
   const otpRefs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation<any>();
+  const { setCustomerId } = useAuth();
 
   // OTP Countdown
   useEffect(() => {
@@ -104,8 +107,11 @@ const LoginScreen = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.msg || "OTP verification failed");
 
+        
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
         Alert.alert("Success", "Login successful!");
+        setCustomerId(data.user._id);
+
         
         if (role === "Agent") {
           navigation.replace("SelectInsurance");
@@ -133,9 +139,10 @@ const LoginScreen = () => {
           }
           throw new Error(data.msg || "Login failed");
         }
-
+        
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
         Alert.alert("Success", "Login successful!");
+        setCustomerId(data.user._id); 
         
         if (role === "Agent") {
           navigation.replace("SelectInsurance");
@@ -222,9 +229,9 @@ const LoginScreen = () => {
       {/* Top Turquoise Section */}
       <View style={styles.topSection}>
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeTitle}>Welcome to Name</Text>
+          <Text style={styles.welcomeTitle}>Welcome to AdPolicy</Text>
           <Text style={styles.welcomeSubtitle}>
-            Login to Your Path to a Financially{'\n'}Stress-Free Life!
+            Login to Your Path to a Hastle-Free{'\n'} Life!
           </Text>
         </View>
       </View>

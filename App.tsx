@@ -4,6 +4,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+
 import LoginPage from './src/screens/LatestLoginScreen';
 import DashboardPage from './src/screens/DashboardScreen';
 import NewDashboardScreen from './src/screens/CustomerDashboardScreen';  
@@ -21,6 +22,7 @@ import PolicyOverviewScreen from './src/screens/PolicyOverviewScreen';
 import DuePaymentsScreen from './src/screens/DuePaymentScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import FAQScreen from './src/screens/FAQScreen';
+import { AuthProvider } from './src/context/AuthContext';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -49,6 +51,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
   return (
+    <AuthProvider>
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginPage} options={{ title: 'Login' }} />
@@ -69,6 +72,7 @@ const App = () => {
         <Stack.Screen name="FAQ" component={FAQScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
+    </AuthProvider>
   );
 };
 
