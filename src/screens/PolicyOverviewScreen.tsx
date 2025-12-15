@@ -18,14 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
-// Configuration - Update this to match your server URL
-const API_CONFIG = {
-  BASE_URL: 'http://10.0.2.2:5000', // Change to your server URL
-  ENDPOINTS: {
-    FETCH_POLICY_DETAILS: (customerId: string, policyId: string, policyNumber: string) => 
-      `/v1/customer/${customerId}/${policyId}/${policyNumber}`,
-  }
-};
+// API Base URL - same as other screens
+const API_BASE = "https://policysaath.com/api/";
 
 interface PolicyDetails {
   _id: string;
@@ -94,7 +88,10 @@ const PolicyOverviewScreen = () => {
       setError(null);
 
       console.log('Fetching policy details:', { customerId, policyId, policyNumber });
-      const apiUrl = `${API_CONFIG.BASE_URL}/v1/customer/${customerId}/${policyId}/${policyNumber}`;
+      
+      // Use the policy details API endpoint
+      const apiUrl = `${API_BASE}/v1/customer/${customerId}/${policyId}/${policyNumber}`;
+      console.log('API URL:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -105,6 +102,31 @@ const PolicyOverviewScreen = () => {
 
       console.log('API Response status:', response.status);
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If not JSON, might be HTML error page - try fetching from policyData instead
+        console.log('Response not JSON, trying alternate approach...');
+        
+        // Fallback: fetch all policies and find the matching one
+        const fallbackUrl = `${API_BASE}/v1/customer/customer-fetch-policy/${customerId}`;
+        const fallbackResponse = await fetch(fallbackUrl);
+        const fallbackData = await fallbackResponse.json();
+        
+        if (fallbackResponse.ok && fallbackData.policyData) {
+          const matchingPolicy = fallbackData.policyData.find(
+            (p: any) => p._id === policyId || p.policyNumber === policyNumber
+          );
+          
+          if (matchingPolicy) {
+            setPolicyDetails(matchingPolicy);
+            console.log('Policy details loaded from fallback');
+            return;
+          }
+        }
+        throw new Error('Policy not found');
+      }
+
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Policy not found');
@@ -113,12 +135,29 @@ const PolicyOverviewScreen = () => {
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
 
-      const data: ApiResponse = await response.json();
+      const data = await response.json();
       console.log('Policy details response:', JSON.stringify(data, null, 2));
 
+      // Handle different response structures
       if (data.policy) {
         setPolicyDetails(data.policy);
         console.log('Policy details loaded successfully');
+      } else if (data.policyData) {
+        // If response has policyData array, find matching policy
+        const matchingPolicy = Array.isArray(data.policyData) 
+          ? data.policyData.find((p: any) => p._id === policyId || p.policyNumber === policyNumber)
+          : data.policyData;
+        
+        if (matchingPolicy) {
+          setPolicyDetails(matchingPolicy);
+          console.log('Policy details loaded from policyData');
+        } else {
+          throw new Error('Policy not found in response');
+        }
+      } else if (data._id) {
+        // Response is the policy object directly
+        setPolicyDetails(data);
+        console.log('Policy details loaded directly');
       } else {
         throw new Error('Policy data not found in response');
       }

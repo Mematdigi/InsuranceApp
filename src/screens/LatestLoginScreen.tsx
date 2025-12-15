@@ -9,19 +9,22 @@ import {
   Alert,
   Dimensions,
   StatusBar,
+  Animated,
+  Easing,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from '../context/AuthContext';
 
-
 const { width, height } = Dimensions.get("window");
-const API_BASE = "http://10.0.2.2:5000/api";
+const API_BASE = "https://policysaath.com/api/api";
 
 const LoginScreen = () => {
   const [role, setRole] = useState<"Customer" | "Agent">("Customer");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpLogin, setIsOtpLogin] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -40,6 +43,254 @@ const LoginScreen = () => {
   const otpRefs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation<any>();
   const { setCustomerId } = useAuth();
+
+  // Animation values
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  const titleTranslateY = useRef(new Animated.Value(-60)).current;
+  const titleScale = useRef(new Animated.Value(0.5)).current;
+  const titleRotateX = useRef(new Animated.Value(90)).current;
+  
+  const subtitleOpacity = useRef(new Animated.Value(0)).current;
+  const subtitleTranslateY = useRef(new Animated.Value(40)).current;
+  const subtitleScale = useRef(new Animated.Value(0.8)).current;
+  
+  const formOpacity = useRef(new Animated.Value(0)).current;
+  const formTranslateY = useRef(new Animated.Value(30)).current;
+  
+  // Background animation values
+  const circle1Opacity = useRef(new Animated.Value(0.7)).current;
+  const circle1Scale = useRef(new Animated.Value(1)).current;
+  const circle1Rotate = useRef(new Animated.Value(0)).current;
+  
+  const circle2Opacity = useRef(new Animated.Value(0.7)).current;
+  const circle2Scale = useRef(new Animated.Value(1)).current;
+  const circle2Rotate = useRef(new Animated.Value(0)).current;
+  
+  const circle3Opacity = useRef(new Animated.Value(0.7)).current;
+  const circle3Scale = useRef(new Animated.Value(1)).current;
+  const circle3Rotate = useRef(new Animated.Value(0)).current;
+
+  // ADD these new refs after existing animation values:
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerHeight = useRef(new Animated.Value(height * 0.4)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerScale = useRef(new Animated.Value(1)).current;
+  // Start animations on mount
+  useEffect(() => {
+    // Title entrance animation
+    Animated.sequence([
+      Animated.delay(500),
+      Animated.timing(titleOpacity, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(500),
+      Animated.timing(titleTranslateY, {
+        toValue: 0,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(500),
+      Animated.timing(titleScale, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(500),
+      Animated.timing(titleRotateX, {
+        toValue: 0,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // Subtitle entrance animation
+    Animated.sequence([
+      Animated.delay(1500),
+      Animated.timing(subtitleOpacity, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(1500),
+      Animated.timing(subtitleTranslateY, {
+        toValue: 0,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(1500),
+      Animated.timing(subtitleScale, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // Form entrance animation
+    Animated.sequence([
+      Animated.delay(2500),
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(2500),
+      Animated.timing(formTranslateY, {
+        toValue: 0,
+        duration: 1500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // Background circles animation
+    const startBackgroundAnimations = () => {
+      // Circle 1 animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(circle1Scale, {
+            toValue: 1.2,
+            duration: 3000,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: false,
+          }),
+          Animated.timing(circle1Scale, {
+            toValue: 0.8,
+            duration: 3000,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+
+      Animated.loop(
+        Animated.timing(circle1Rotate, {
+          toValue: 360,
+          duration: 8000,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        })
+      ).start();
+
+      // Circle 2 animation (delayed)
+      setTimeout(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(circle2Scale, {
+              toValue: 1.3,
+              duration: 4000,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: false,
+            }),
+            Animated.timing(circle2Scale, {
+              toValue: 0.7,
+              duration: 4000,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: false,
+            }),
+          ])
+        ).start();
+
+        Animated.loop(
+          Animated.timing(circle2Rotate, {
+            toValue: 360,
+            duration: 12000,
+            easing: Easing.linear,
+            useNativeDriver: false,
+          })
+        ).start();
+      }, 2000);
+
+      // Circle 3 animation (more delayed)
+      setTimeout(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(circle3Scale, {
+              toValue: 1.1,
+              duration: 5000,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: false,
+            }),
+            Animated.timing(circle3Scale, {
+              toValue: 0.9,
+              duration: 5000,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: false,
+            }),
+          ])
+        ).start();
+
+        Animated.loop(
+          Animated.timing(circle3Rotate, {
+            toValue: 360,
+            duration: 10000,
+            easing: Easing.linear,
+            useNativeDriver: false,
+          })
+        ).start();
+      }, 4000);
+    };
+
+    startBackgroundAnimations();
+  }, []);
+
+  // ADD this function after existing useEffect:
+const handleScroll = Animated.event(
+  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+  { 
+    useNativeDriver: false,
+    listener: (event: any) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const threshold = 50;
+      const maxCollapse = 150;
+      
+      const progress = Math.min(Math.max(offsetY - threshold, 0) / maxCollapse, 1);
+      
+      const minHeight = height * 0.1;
+      const maxHeight = height * 0.4;
+      const newHeight = maxHeight - (maxHeight - minHeight) * progress;
+      
+      headerHeight.setValue(newHeight);
+      headerOpacity.setValue(1 - progress * 0.8);
+      headerScale.setValue(1 - progress * 0.3);
+    }
+  }
+);
+
+const resetHeader = () => {
+  Animated.parallel([
+    Animated.timing(headerHeight, { toValue: height * 0.4, duration: 300, useNativeDriver: false }),
+    Animated.timing(headerOpacity, { toValue: 1, duration: 300, useNativeDriver: false }),
+    Animated.timing(headerScale, { toValue: 1, duration: 300, useNativeDriver: false }),
+  ]).start();
+};
 
   // OTP Countdown
   useEffect(() => {
@@ -107,10 +358,15 @@ const LoginScreen = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.msg || "OTP verification failed");
 
-        
-        await AsyncStorage.setItem("user", JSON.stringify(data.user));
+        // ✅ Normalize user object so it always has an `id` field
+        const normalizedUser = {
+          ...data.user,
+          id: data.user.id || data.user._id,
+        };
+
+        await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
         Alert.alert("Success", "Login successful!");
-        setCustomerId(data.user._id);
+        setCustomerId(normalizedUser.id);
 
         
         if (role === "Agent") {
@@ -139,11 +395,17 @@ const LoginScreen = () => {
           }
           throw new Error(data.msg || "Login failed");
         }
-        
-        await AsyncStorage.setItem("user", JSON.stringify(data.user));
+
+        // ✅ Normalize user object so it always has an `id` field
+        const normalizedUser = {
+          ...data.user,
+          id: data.user.id || data.user._id,
+        };
+
+        await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
         Alert.alert("Success", "Login successful!");
-        setCustomerId(data.user._id); 
-        
+        setCustomerId(normalizedUser.id); 
+
         if (role === "Agent") {
           navigation.replace("SelectInsurance");
         } else {
@@ -226,18 +488,94 @@ const LoginScreen = () => {
     <View style={styles.container}>
       <StatusBar backgroundColor="#62D2CC" barStyle="light-content" />
       
-      {/* Top Turquoise Section */}
+      {/* Top Turquoise Section with Enhanced Header */}
       <View style={styles.topSection}>
+        {/* Animated Background Circles */}
+        <Animated.View style={[
+          styles.bgCircle1,
+          {
+            opacity: circle1Opacity,
+            transform: [
+              { scale: circle1Scale },
+              { rotate: circle1Rotate.interpolate({
+                inputRange: [0, 360],
+                outputRange: ['0deg', '360deg']
+              })}
+            ]
+          }
+        ]} />
+        
+        <Animated.View style={[
+          styles.bgCircle2,
+          {
+            opacity: circle2Opacity,
+            transform: [
+              { scale: circle2Scale },
+              { rotate: circle2Rotate.interpolate({
+                inputRange: [0, 360],
+                outputRange: ['0deg', '360deg']
+              })}
+            ]
+          }
+        ]} />
+        
+        <Animated.View style={[
+          styles.bgCircle3,
+          {
+            opacity: circle3Opacity,
+            transform: [
+              { scale: circle3Scale },
+              { rotate: circle3Rotate.interpolate({
+                inputRange: [0, 360],
+                outputRange: ['0deg', '360deg']
+              })}
+            ]
+          }
+        ]} />
+        
+
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeTitle}>Welcome to AdPolicy</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Login to Your Path to a Hastle-Free{'\n'} Life!
-          </Text>
+          <Animated.Text style={[
+            styles.welcomeTitle,
+            {
+              opacity: titleOpacity,
+              transform: [
+                { translateY: titleTranslateY },
+                { scale: titleScale },
+                { perspective: 1000 },
+                { rotateX: titleRotateX.interpolate({
+                  inputRange: [0, 90],
+                  outputRange: ['0deg', '90deg']
+                })}
+              ]
+            }
+          ]}>
+            Welcome to PolicySaath
+          </Animated.Text>
+          
+          <Animated.Text style={[
+            styles.welcomeSubtitle,
+            {
+              opacity: subtitleOpacity,
+              transform: [
+                { translateY: subtitleTranslateY },
+                { scale: subtitleScale }
+              ]
+            }
+          ]}>
+            Login to Your Path to a Hassle-Free{'\n'}Experience!
+          </Animated.Text>
         </View>
       </View>
 
-      {/* Main White Container with Curve */}
-      <View style={styles.mainContainer}>
+      {/* Main White Container with Enhanced Form */}
+      <Animated.View style={[
+        styles.mainContainer,
+        {
+          opacity: formOpacity,
+          transform: [{ translateY: formTranslateY }]
+        }
+      ]}>
         {/* Curved overlay to create the curve effect */}
         <View style={styles.curveOverlay} />
         
@@ -245,6 +583,7 @@ const LoginScreen = () => {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+         
         >
           {/* Tab Selection */}
           <View style={styles.tabContainer}>
@@ -286,31 +625,52 @@ const LoginScreen = () => {
                 <>
                   {/* Email Input */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Email</Text>
+                    {/* <Text style={styles.label}>Email</Text> */}
                     <TextInput
-                      style={styles.input}
+                      style={[
+                        styles.input,
+                        emailFocused && styles.inputFocused]}
                       value={identifier}
                       onChangeText={setIdentifier}
+                      onFocus={()=>setEmailFocused(true)}
+                      onBlur={()=>setEmailFocused(false)}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoComplete="email"
                     />
+                    <Text style={[
+                      styles.label,
+                      (emailFocused || identifier) && styles.labelFocused  // ✅ ADD dynamic styling
+                    ]}>
+                      Email
+                    </Text>
                   </View>
 
                   {!isOtpLogin && (
                     <>
                       {/* Password Input */}
                       <View style={styles.inputGroup}>
-                
+                        {/* <Text style={styles.label}>Password</Text> */}
                         <TextInput
-                          style={styles.input}
+                          style={[
+                            styles.input,
+                          passwordFocused && styles.inputFocused
+                        ]}
                           value={password}
                           onChangeText={setPassword}
+                          onFocus={() => setPasswordFocused(true)}   // ✅ ADD focus handlers
+                          onBlur={() => setPasswordFocused(false)} 
                           secureTextEntry={!showPassword}
                           autoComplete="password"
-                          placeholder="Password"
+                          // placeholder="Password"
                           placeholderTextColor="#00728D"
                         />
+                        <Text style={[
+                          styles.label,
+                          (passwordFocused || password) && styles.labelFocused  // ✅ ADD dynamic styling
+                        ]}>
+                          Password
+                        </Text>
                       </View>
 
                       {/* Forgot Password */}
@@ -320,14 +680,7 @@ const LoginScreen = () => {
                     </>
                   )}
 
-                  {/* Login via OTP */}
-                  <TouchableOpacity 
-                    style={styles.otpLinkContainer}
-                    onPress={() => setIsOtpLogin(!isOtpLogin)}
-                  >
-                    <Text style={styles.otpLinkIcon}>📱</Text>
-                    <Text style={styles.otpLinkText}>Login via OTP</Text>
-                  </TouchableOpacity>
+                  {/* Login via OTP - moved after login button */}
                 </>
               ) : (
                 // OTP Section
@@ -402,6 +755,18 @@ const LoginScreen = () => {
                   }
                 </Text>
               </TouchableOpacity>
+
+              {/* Login via OTP Link - moved below login button */}
+              {!otpSent && (
+                <TouchableOpacity 
+                  style={styles.otpLinkSimple}
+                  onPress={() => setIsOtpLogin(!isOtpLogin)}
+                >
+                  <Text style={styles.otpLinkSimpleText}>
+                    {isOtpLogin ? "← Back to Password Login" : "Login via OTP →"}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               {!otpSent && (
                 <>
@@ -516,7 +881,7 @@ const LoginScreen = () => {
             </>
           )}
         </ScrollView>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -528,40 +893,87 @@ const styles = StyleSheet.create({
   },
   topSection: {
     backgroundColor: '#62D2CC',
-    height: height * 0.25,
-    justifyContent: 'flex-start',
-    paddingTop: 50,
+    height: height * 0.3,
+    justifyContent: 'center',
+    paddingTop: 30,
+    paddingBottom: 30,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  // Animated background circles
+  bgCircle1: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    top: '15%',
+    left: '8%',
+  },
+  bgCircle2: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    top: '65%',
+    right: '10%',
+  },
+  bgCircle3: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    bottom: '25%',
+    left: '15%',
   },
   headerContent: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 20,
+    zIndex: 10,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 32,
+    fontWeight: '700',
     color: 'white',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   welcomeSubtitle: {
-    fontSize: 16,
-    color: 'white',
-    lineHeight: 22,
-    opacity: 0.9,
+    fontSize: 18,
+    color: 'rgba(255, 255, 255, 0.95)',
+    lineHeight: 24,
+    textAlign: 'center',
+    fontWeight: '400',
   },
   mainContainer: {
     flex: 1,
     backgroundColor: 'white',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -20,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+    minHeight: height * 0.6,
   },
   curveOverlay: {
     position: 'absolute',
-    top: -50,
+    top: -40,
     left: -50,
     right: -50,
-    height: 50,
+    height: 40,
     backgroundColor: '#62D2CC',
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 150,
@@ -572,106 +984,143 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 40,
     paddingBottom: 40,
+    minHeight:height*0.8,
   },
   tabContainer: {
     flexDirection: 'row',
     marginBottom: 32,
     backgroundColor: 'transparent',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F9FF',
-    marginHorizontal: 2,
+    backgroundColor: '#F8FFFE',
+    marginHorizontal: 1,
   },
   leftTab: {
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
   rightTab: {
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
   activeTab: {
     backgroundColor: '#62D2CC',
+    shadowColor: '#62D2CC',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#62D2CC',
   },
   activeTabText: {
     color: 'white',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
+    position:'absolute',
+    left:16,
+    top:-12,
+    zIndex:1,
     fontSize: 14,
     fontWeight: '500',
     color: '#00728D',
-    marginBottom: 6,
+    paddingHorizontal:8,
+    backgroundColor:'white',
+    paddingVertical:2,
   },
+
+  labelFocused:{
+    color: '#62D2CC',
+  },
+  inputFocused: {
+  borderColor: '#62D2CC',
+  shadowColor: '#62D2CC',
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+
   input: {
-    borderWidth: 1,
-    borderColor: '#00728D',
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#9BD5D1',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    paddingLeft:20,
     fontSize: 16,
     color: '#111827',
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFf',
+    fontWeight: '500',
+    
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   forgotPasswordText: {
     fontSize: 14,
     color: '#62D2CC',
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  otpLinkContainer: {
-    flexDirection: 'row',
+  // New simplified OTP link styles
+  otpLinkSimple: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     paddingVertical: 8,
   },
-  otpLinkIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  otpLinkText: {
+  otpLinkSimpleText: {
     fontSize: 14,
     color: '#62D2CC',
     fontWeight: '500',
+    textDecorationLine: 'underline',
   },
   loginButton: {
     backgroundColor: '#62D2CC',
-    borderRadius: 8,
-    paddingVertical: 16,
+    borderRadius: 12,
+    paddingVertical: 18,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    shadowColor: '#62D2CC',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   loginButtonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   disabledButton: {
     backgroundColor: '#A5D6D3',
+    shadowOpacity: 0.1,
   },
   orContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   orLine: {
     flex: 1,
@@ -682,108 +1131,125 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 14,
     color: '#9CA3AF',
+    fontWeight: '500',
   },
   registerButton: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#62D2CC',
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 24,
-    backgroundColor: '#F9FAFB',
+    marginBottom: 28,
+    backgroundColor: 'transparent',
   },
   registerButtonText: {
     color: '#62D2CC',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '600',
   },
   continueWithText: {
     textAlign: 'center',
     fontSize: 14,
     color: '#9CA3AF',
-    marginBottom: 16,
+    marginBottom: 20,
+    fontWeight: '500',
   },
   socialButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
+    gap: 20,
   },
   socialButton: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
   },
   facebookButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   facebookIcon: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  googleButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  googleIcon: {
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
   },
-  googleButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleIcon: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   appleButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#1F2937',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   appleIcon: {
-    fontSize: 16,
+    fontSize: 18,
   },
   // OTP Styles
   otpHeader: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
   },
   otpTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#111827',
     marginBottom: 8,
   },
   otpDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   identifierText: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#62D2CC',
   },
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 24,
     paddingHorizontal: 20,
   },
   otpInput: {
-    width: 45,
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    fontSize: 18,
-    fontWeight: '600',
+    width: 50,
+    height: 56,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    fontSize: 20,
+    fontWeight: '700',
     color: '#111827',
     backgroundColor: 'white',
     textAlign: 'center',
@@ -791,34 +1257,41 @@ const styles = StyleSheet.create({
   otpInputFilled: {
     borderColor: '#62D2CC',
     backgroundColor: '#F0FDFA',
+    shadowColor: '#62D2CC',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   timerContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   timerText: {
     color: '#6B7280',
     fontSize: 14,
+    fontWeight: '500',
   },
   resendButton: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   resendText: {
     color: '#62D2CC',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
   },
   disabledText: {
     color: '#9CA3AF',
   },
   backButton: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   backButtonText: {
     color: '#6B7280',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

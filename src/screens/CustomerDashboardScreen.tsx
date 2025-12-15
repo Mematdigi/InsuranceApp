@@ -10,15 +10,19 @@ import {
   Alert,
   Dimensions,
   RefreshControl,
+  Animated,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+
 
 const { width } = Dimensions.get('window');
 
 // Configuration
 const API_CONFIG = {
-  BASE_URL: 'http://10.0.2.2:5000', // Change to your server URL
+  BASE_URL: 'https://policysaath.com/api', // Emulator IP - Change to your device IP for real device (192.168.1.14:3000)
   ENDPOINTS: {
     FETCH_POLICIES: (customerId: string) => `/v1/customer/customer-fetch-policy/${customerId}`,
   }
@@ -73,6 +77,9 @@ const NewDashboardScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Animation values for cards
+  const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
+  
   useEffect(() => {
     loadUserData();
   }, []);
@@ -83,13 +90,33 @@ const NewDashboardScreen = () => {
     }
   }, [userId]);
 
+  // Initialize animations when policy cards change
+  useEffect(() => {
+    if (policyCards.length > 0) {
+      const animations = policyCards.map(() => new Animated.Value(0));
+      setCardAnimations(animations);
+      
+      // Stagger animation for each card
+      const staggerDelay = 200;
+      animations.forEach((animation, index) => {
+        Animated.timing(animation, {
+          toValue: 1,
+          duration: 600,
+          delay: index * staggerDelay,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  }, [policyCards]);
+
   const loadUserData = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
+        const resolvedId = user.id || user._id;
         setUsername(user.username || user.name || 'User');
-        setUserId(user.id);
+        setUserId(resolvedId);
       } else if (route.params?.username) {
         setUsername(route.params.username);
       } else {
@@ -133,15 +160,39 @@ const NewDashboardScreen = () => {
           setPolicyCards([]);
           return;
         }
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } else {
+            const textError = await response.text();
+            console.error('Non-JSON error response:', textError);
+            errorMessage = `Server error (${response.status})`;
+          }
+        } catch (parseError) {
+          console.error('Error parsing error response:', parseError);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Non-JSON response:', textResponse);
+        throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();
       console.log('API Response:', data);
 
       if (data.policyData && Array.isArray(data.policyData)) {
-        setPolicyCards(data.policyData.slice(0, 3)); // Show first 3 policies
+        setPolicyCards(data.policyData); // Show all policies for vertical layout
         console.log('Policies loaded successfully:', data.policyData.length);
       } else {
         setPolicyCards([]);
@@ -163,23 +214,44 @@ const NewDashboardScreen = () => {
     fetchPolicies(true);
   };
 
-  const policyActions: PolicyAction[] = [
+  // Conditional policy actions based on whether user has policies
+  const policyActions: PolicyAction[] = policyCards.length === 0 ? [
     {
       id: '1',
       title: 'Add Policy',
-      icon: '📋',
+      icon: '➕',
       action: () => navigation.navigate('ChooseCompany')
-    },
-    {
-      id: '2',
-      title: 'Notifications',
-      icon: '🔔',
-      action: () => navigation.navigate('Profile')
     },
     {
       id: '3',
       title: 'View Policy',
-      icon: '👁️',
+      icon: '📄',
+      action: () => navigation.navigate('MyPolicy')
+    },
+    {
+      id: '4',
+      title: 'Renew Policy',
+      icon: '🔄',
+      action: () => navigation.navigate('DuePayment')
+    }
+  ] : [
+    // Hide "Add Policy" when user has policies
+    {
+      id: '1',
+      title: 'Add Policy',
+      icon: '➕',
+      action: () => navigation.navigate('ChooseCompany')
+    },
+    // {
+    //   id: '2',
+    //   title: 'Notifications',
+    //   icon: '🔔',
+    //   action: () => navigation.navigate('Profile')
+    // },
+    {
+      id: '3',
+      title: 'View Policy',
+      icon: '📄',
       action: () => navigation.navigate('MyPolicy')
     },
     {
@@ -190,42 +262,42 @@ const NewDashboardScreen = () => {
     }
   ];
 
-  const importantUpdates: UpdateNotification[] = [
-    {
-      id: '1',
-      title: 'Payment Alerts',
-      subtitle: 'Payment overdue reminders',
-      icon: '💳',
-      color: '#4ECDC4',
-      action: () => navigation.navigate('DuePayment')
-    },
-    {
-      id: '2',
-      title: 'Policy Updates',
-      subtitle: 'New terms and conditions',
-      icon: '📄',
-      color: '#61BACA',
-      action:() => Alert.alert('Coming Soon')
-    },
-    {
-      id: '3',
-      title: 'Renewal Notice',
-      subtitle: 'Policy expiring soon',
-      icon: '⚠️',
-      color: '#FFB84D',
-      action:() => Alert.alert('Coming Soon')
-    }
-  ];
+  // const importantUpdates: UpdateNotification[] = [
+  //   {
+  //     id: '1',
+  //     title: 'Payment Alerts',
+  //     subtitle: 'Payment overdue reminders',
+  //     icon: '💳',
+  //     color: '#4ECDC4',
+  //     action: () => navigation.navigate('DuePayment')
+  //   },
+  //   {
+  //     id: '2',
+  //     title: 'Policy Updates',
+  //     subtitle: 'New terms and conditions',
+  //     icon: '📄',
+  //     color: '#61BACA',
+  //     action:() => Alert.alert('Coming Soon')
+  //   },
+  //   {
+  //     id: '3',
+  //     title: 'Renewal Notice',
+  //     subtitle: 'Policy expiring soon',
+  //     icon: '⚠️',
+  //     color: '#FFB84D',
+  //     action:() => Alert.alert('Coming Soon')
+  //   }
+  // ];
 
-  const appsupport: SupportTab[] = [
-    {
-      id: '1',
-      title: "FAQ's",
-      icon: '❓',
-      color: '#4ECDC4',
-      action: () => navigation.navigate('FAQ')
-    }
-  ];
+  // const appsupport: SupportTab[] = [
+  //   {
+  //     id: '1',
+  //     title: "FAQ's",
+  //     icon: '❓',
+  //     color: '#4ECDC4',
+  //     action: () => navigation.navigate('FAQ')
+  //   }
+  // ];
 
   const handleLogout = async () => {
     Alert.alert(
@@ -334,7 +406,7 @@ const NewDashboardScreen = () => {
 
           <View style={styles.greetingSection}>
             <Text style={styles.greetingText}>Welcome Back</Text>
-            <Text style={styles.usernameText}>{username}</Text>
+            <Text style={styles.usernameText}>{username.charAt(0).toUpperCase()+ username.slice(1).toLowerCase()}</Text>
           </View>
           
           <TouchableOpacity style={styles.notificationButton}>
@@ -364,143 +436,168 @@ const NewDashboardScreen = () => {
         }
       >
         
-        {/* Policy Actions Card */}
-        <View style={styles.policyActionsCard}>
-          <Text style={styles.cardTitle}>Policy Actions</Text>
-          
-          <View style={styles.actionsGrid}>
-            {policyActions.map((action) => (
-              <TouchableOpacity 
-                key={action.id} 
-                style={styles.actionItem}
-                onPress={action.action}
-                activeOpacity={0.7}
-              >
-                <View style={styles.actionIconContainer}>
-                  <Text style={styles.actionIcon}>{action.icon}</Text>
+        {/* First Time User - Add Policy Tab */}
+        {policyCards.length === 0 && !loading && (
+          <View style={styles.addPolicyTab}>
+            <View style={styles.addPolicyContent}>
+              <View style={styles.addPolicyTextSection}>
+                <Text style={styles.addPolicyTitle}>Can't See Your Policy?</Text>
+                <Text style={styles.addPolicySubtitle}>
+                  Don't Worry! You Will Be Able To See Your Policy Here In Just A Few Steps
+                </Text>
+                <TouchableOpacity 
+                  style={styles.addPolicyButton}
+                  onPress={() => navigation.navigate('ChooseCompany')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.addPolicyButtonText}>Add policy</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.addPolicyImageSection}>
+                <View style={styles.carContainer}>
+                  <View style={styles.carBody}>
+                    <View style={styles.carWindows} />
+                    <View style={styles.carDoor} />
+                  </View>
+                  <View style={[styles.carWheel, styles.frontWheel]} />
+                  <View style={[styles.carWheel, styles.rearWheel]} />
                 </View>
-                <Text style={styles.actionTitle}>{action.title}</Text>
-              </TouchableOpacity>
-            ))}
+                <View style={styles.personContainer}>
+                  <View style={styles.personHead} />
+                  <View style={styles.personBody} />
+                  <View style={styles.personArm} />
+                </View>
+                <View style={styles.shieldContainer}>
+                  <Text style={styles.shieldIcon}>🛡️</Text>
+                </View>
+              </View>
+            </View>
           </View>
-        </View>
-
-        {/* Your Insurance Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Insurance</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('MyPolicy')}>
-            <Text style={styles.viewAllText}>View All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Insurance Cards */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.insuranceCardsContainer}
-          style={styles.insuranceCardsScroll}
-        >
-          {loading ? (
-            <View style={[styles.insuranceCard, styles.noDataCard]}>
-              <View style={styles.cardBody}>
-                <Text style={styles.noDataText}>Loading...</Text>
-                <Text style={styles.noDataSubtext}>Fetching your policies</Text>
-              </View>
+        )}
+        
+        {/* Policy Actions Card - Only show if user has policies */}
+        {policyCards.length > 0 && (
+          <View style={styles.policyActionsCard}>
+            <Text style={styles.cardTitle}>Policy Actions</Text>
+            
+            <View style={styles.actionsGrid}>
+              {policyActions.map((action) => (
+                <TouchableOpacity 
+                  key={action.id} 
+                  style={styles.actionItem}
+                  onPress={action.action}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>{action.icon}</Text>
+                  </View>
+                  <Text style={styles.actionTitle}>{action.title}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          ) : policyCards.length > 0 ? (
-            policyCards.map((card) => (
-              <TouchableOpacity 
-                key={card._id || card.policyNumber} 
-                style={styles.insuranceCard}
-                onPress={() => handlePolicyCardPress(card)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={[
-                    styles.cardStatus, 
-                    card.status === 'Overdue' && styles.overdueStatus
-                  ]}>
-                    <Text style={[
-                      styles.statusText,
-                      card.status === 'Overdue' && styles.overdueStatusText
-                    ]}>
-                      {card.status || 'Active'}
-                    </Text>
-                  </View>
-                  <Text style={styles.companyName}>
-                    {getCompanyName(card.policyType || '')}
-                  </Text>
-                  <View style={styles.companyLogo}>
-                    <View style={styles.logoCircle} />
-                  </View>
-                </View>
-                
-                <View style={styles.cardBody}>
-                  <Text style={styles.insuranceType}>
-                    {card.policyType || 'Insurance Policy'}
-                  </Text>
-                  <Text style={styles.insuranceSubType}>
-                    {card.productName && card.productName.length > 25 ? 
-                      card.productName.substring(0, 25) + '...' : 
-                      card.productName || 'Policy Coverage'}
-                  </Text>
-                </View>
-                
-                <View style={styles.cardFooter}>
-                  <View style={styles.premiumInfo}>
-                    <Text style={styles.premiumLabel}>Premium :</Text>
-                    <Text style={styles.premiumAmount}>
-                      ₹{formatPremium(card.premiumAmount || '0')}
-                      <Text style={styles.frequency}> / Year</Text>
-                    </Text>
-                  </View>
-                  <View style={styles.expiryInfo}>
-                    <Text style={styles.expiryLabel}>Expires :</Text>
-                    <Text style={styles.expiryDate}>
-                      {formatDate(card.endDate)}
-                    </Text>
-                  </View>
-                </View>
+          </View>
+        )}
+
+        {/* Your Insurance Section - Only show if user has policies */}
+        {policyCards.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Your Insurance</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('MyPolicy')}>
+                <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.welcomeCard}>
-              <View style={styles.welcomeContent}>
-                <View style={styles.welcomeTextSection}>
-                  <Text style={styles.welcomeTitle}>Can't See Your Policy?</Text>
-                  <Text style={styles.welcomeSubtitle}>
-                    Don't Worry! You Will Be Able To See Your Policy Here In Just A Few Steps
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.addPolicyButton}
-                    onPress={() => navigation.navigate('ChooseCompany')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.addPolicyButtonText}>Add policy</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.welcomeImageSection}>
-                  <View style={styles.carContainer}>
-                    <View style={styles.carBody}>
-                      <View style={styles.carWindows} />
-                      <View style={styles.carDoor} />
-                    </View>
-                    <View style={[styles.carWheel, styles.frontWheel]} />
-                    <View style={[styles.carWheel, styles.rearWheel]} />
-                  </View>
-                  <View style={styles.personContainer}>
-                    <View style={styles.personHead} />
-                    <View style={styles.personBody} />
-                    <View style={styles.personArm} />
-                  </View>
-                  <View style={styles.shieldContainer}>
-                    <Text style={styles.shieldIcon}>🛡️</Text>
-                  </View>
-                </View>
-              </View>
             </View>
-          )}
-        </ScrollView>
+
+            {/* Vertical Insurance Cards with Animation */}
+            <View style={styles.insuranceCardsVerticalContainer}>
+              {loading ? (
+                <View style={[styles.insuranceCardVertical, styles.noDataCard]}>
+                  <View style={styles.cardBody}>
+                    <Text style={styles.noDataText}>Loading...</Text>
+                    <Text style={styles.noDataSubtext}>Fetching your policies</Text>
+                  </View>
+                </View>
+              ) : (
+                policyCards.map((card, index) => {
+                  const animatedStyle = cardAnimations[index] ? {
+                    opacity: cardAnimations[index],
+                    transform: [
+                      {
+                        translateY: cardAnimations[index].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50, 0],
+                        }),
+                      },
+                      {
+                        scale: cardAnimations[index].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.8, 1],
+                        }),
+                      },
+                    ],
+                  } : {};
+
+                  return (
+                    <Animated.View key={card._id || card.policyNumber} style={animatedStyle}>
+                      <TouchableOpacity 
+                        style={styles.insuranceCardVertical}
+                        onPress={() => handlePolicyCardPress(card)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.cardHeader}>
+                          <View style={[
+                            styles.cardStatus, 
+                            card.status === 'Overdue' && styles.overdueStatus
+                          ]}>
+                            <Text style={[
+                              styles.statusText,
+                              card.status === 'Overdue' && styles.overdueStatusText
+                            ]}>
+                              {card.status || 'Active'}
+                            </Text>
+                          </View>
+                          <Text style={styles.companyName}>
+                            {getCompanyName(card.policyType || '')}
+                          </Text>
+                          <View style={styles.companyLogo}>
+                            <View style={styles.logoCircle} />
+                          </View>
+                        </View>
+                        
+                        <View style={styles.cardBody}>
+                          <Text style={styles.insuranceType}>
+                            {card.policyType || 'Insurance Policy'}
+                          </Text>
+                          <Text style={styles.insuranceSubType}>
+                            {card.productName && card.productName.length > 40 ? 
+                              card.productName.substring(0, 40) + '...' : 
+                              card.productName || 'Policy Coverage'}
+                          </Text>
+                        </View>
+                        
+                        <View style={styles.cardFooter}>
+                          <View style={styles.premiumInfo}>
+                            <Text style={styles.premiumLabel}>Premium :</Text>
+                            <Text style={styles.premiumAmount}>
+                              ₹{formatPremium(card.premiumAmount || '0')}
+                              <Text style={styles.frequency}> / Year</Text>
+                            </Text>
+                          </View>
+                          <View style={styles.expiryInfo}>
+                            <Text style={styles.expiryLabel}>Expires :</Text>
+                            <Text style={styles.expiryDate}>
+                              {formatDate(card.endDate)}
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  );
+                })
+              )}
+            </View>
+          </>
+        )}
 
         {/* Important Updates Section */}
         <View style={styles.sectionHeader}>
@@ -510,7 +607,7 @@ const NewDashboardScreen = () => {
           </TouchableOpacity>
         </View>
         
-        <View style={styles.updatesCard}>
+        {/* <View style={styles.updatesCard}>
           {importantUpdates.map((update, index) => (
             <TouchableOpacity 
               key={update.id} 
@@ -530,7 +627,7 @@ const NewDashboardScreen = () => {
               <Text style={styles.updateArrow}>›</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </View> */}
 
         {/* Personal Alerts Section */}
         <View style={styles.personalAlertsCard}>
@@ -591,30 +688,6 @@ const NewDashboardScreen = () => {
         {/* Need Help Section */}
         <View style={styles.helpSection}>
           <Text style={styles.helpTitle}>Need Help !</Text>
-          
-          <View style={styles.helpButtonsRow}>
-            {appsupport.map((support) => (
-              <TouchableOpacity 
-                key={support.id}
-                style={styles.helpButton}
-                onPress={support.action}
-                activeOpacity={0.8}
-              >
-                <View style={styles.helpButtonIcon}>
-                  <Text style={styles.helpButtonEmoji}>{support.icon}</Text>
-                </View>
-                <Text style={styles.helpButtonText}>{support.title}</Text>
-              </TouchableOpacity>
-            ))}
-            
-            <TouchableOpacity style={styles.helpButton} activeOpacity={0.8}>
-              <View style={styles.helpButtonIcon}>
-                <Text style={styles.helpButtonEmoji}>💬</Text>
-              </View>
-              <Text style={styles.helpButtonText}>SMS Us</Text>
-            </TouchableOpacity>
-          </View>
-          
           <TouchableOpacity style={styles.chatBotButton} activeOpacity={0.8}>
             <View style={styles.chatBotIcon}>
               <Text style={styles.chatBotEmoji}>🤖</Text>
@@ -633,11 +706,11 @@ const NewDashboardScreen = () => {
             <Text style={styles.navEmoji}>🏠</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        {/* <TouchableOpacity style={styles.navItem}>
           <View style={styles.navIcon}>
-            <Text style={styles.navEmoji}>🔍</Text>
+            <Text style={styles.navEmoji}>📄</Text>
           </View>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('Profile')}
@@ -648,7 +721,7 @@ const NewDashboardScreen = () => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={handleLogout}>
           <View style={styles.navIcon}>
-            <Text style={styles.navEmoji}>🗑️</Text>
+            <Text style={styles.navEmoji}>🚪</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -686,10 +759,14 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#4ECDC4',
-    paddingTop: 10,
+    paddingTop: 50, // Fixed value that works on both emulator and device
     paddingBottom: 40,
     paddingHorizontal: 20,
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     overflow: 'hidden',
   },
   headerContent: {
@@ -762,7 +839,60 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    marginTop: -20,
+    paddingTop: 165, // Fixed value: 50 (header top) + 55 (content) + 40 (header bottom) + 20 (buffer)
+  },
+  // Add Policy Tab styles (for first-time users)
+  addPolicyTab: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: '#E8F6F3',
+  },
+  addPolicyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  addPolicyTextSection: {
+    flex: 1,
+    marginRight: 16,
+  },
+  addPolicyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1893B0',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  addPolicySubtitle: {
+    fontSize: 14,
+    color: '#718096',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  addPolicyButton: {
+    backgroundColor: '#62D2CC',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignSelf: 'flex-start',
+  },
+  addPolicyButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addPolicyImageSection: {
+    width: 100,
+    height: 80,
+    position: 'relative',
   },
   policyActionsCard: {
     backgroundColor: 'white',
@@ -831,12 +961,27 @@ const styles = StyleSheet.create({
   insuranceCardsScroll: {
     marginBottom: 24,
   },
+  insuranceCardsVerticalContainer: {
+    marginBottom: 24,
+  },
   insuranceCard: {
     width: width * 0.8,
     backgroundColor: '#4ECDC4',
     borderRadius: 16,
     padding: 20,
     marginRight: 16,
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  insuranceCardVertical: {
+    width: '100%',
+    backgroundColor: '#4ECDC4',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     shadowColor: '#4ECDC4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -1068,14 +1213,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 20,
   },
-  addPolicyButton: {
+  addPoliciesButton: {
     backgroundColor: '#62D2CC',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
     alignSelf: 'flex-start',
   },
-  addPolicyButtonText: {
+  addPoliciesButtonText: {
     color: 'white',
     fontSize: 14,
     fontWeight: '600',

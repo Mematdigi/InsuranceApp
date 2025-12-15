@@ -9,43 +9,213 @@ import {
   ScrollView,
   Alert,
   Switch,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 
 interface UserProfile {
   name: string;
   username: string;
   email: string;
+  contact: string;
   avatar?: string;
 }
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
+  const { customerId } = useAuth();
+  const [activeTab, setActiveTab] = useState('profile');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Itunuoluwa Abidoye',
-    username: '@itunuoluwa',
-    email: 'itunu@email.com'
+    name: '',
+    username: '',
+    email: '',
+    contact: ''
   });
+
+  // Edit form state
+  const [editForm, setEditForm] = useState<UserProfile>({
+    name: '',
+    username: '',
+    email: '',
+    contact: ''
+  });
+
   const [quickLoginEnabled, setQuickLoginEnabled] = useState(true);
 
   useEffect(() => {
+    // Dismiss any existing alerts when component mounts
+    console.log('🔄 Profile screen mounted');
+    
     loadUserProfile();
-  }, []);
+  }, [customerId]);
+
+  // Add screen focus effect to debug navigation issues
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🎯 Profile screen focused');
+      return () => {
+        console.log('🎯 Profile screen unfocused');
+      };
+    }, [])
+  );
 
   const loadUserProfile = async () => {
+    if (!customerId) return;
+
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        setUserProfile({
-          name: user.name || 'Itunuoluwa Abidoye',
-          username: user.username || '@itunuoluwa',
-          email: user.email || 'itunu@email.com'
-        });
+      setIsLoading(true);
+      
+      // Try to load from API first
+      const response = await fetch(
+        `https://policysaath.com/v1/customer/customers/${customerId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const profileData = {
+          name: data.name || '',
+          username: data.username || `@${data.name?.toLowerCase().replace(' ', '')}` || '',
+          email: data.email || '',
+          contact: data.contact || '',
+        };
+        
+        setUserProfile(profileData);
+        setEditForm(profileData);
+      } else {
+        // Fallback to AsyncStorage if API fails
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          const profileData = {
+            name: user.name || 'User',
+            username: user.username || '@user',
+            email: user.email || '',
+            contact: user.contact || user.mobile || user.phone || ''
+          };
+          setUserProfile(profileData);
+          setEditForm(profileData);
+        }
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+      // Fallback to AsyncStorage
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          const profileData = {
+            name: user.name || 'User',
+            username: user.username || '@user',
+            email: user.email || '',
+            contact: user.contact || user.mobile || user.phone || ''
+          };
+          setUserProfile(profileData);
+          setEditForm(profileData);
+        }
+      } catch (asyncError) {
+        console.error('Error loading from AsyncStorage:', asyncError);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Save profile changes
+  const saveProfile = async () => {
+    if (!customerId) {
+      Alert.alert('Error', 'User not authenticated');
+      return;
+    }
+
+    // Basic validation
+    if (!editForm.name.trim()) {
+      Alert.alert('Validation Error', 'Name is required');
+      return;
+    }
+
+    if (!editForm.email.trim()) {
+      Alert.alert('Validation Error', 'Email is required');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editForm.email)) {
+      Alert.alert('Validation Error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Mobile validation (if provided)
+    if (editForm.contact && editForm.contact.trim()) {
+      const contactRegex = /^[0-9]{10}$/;
+      if (!contactRegex.test(editForm.contact.replace(/\s/g, ''))) {
+        Alert.alert('Validation Error', 'Please enter a valid 10-digit contact number');
+        return;
+      }
+    }
+
+    try {
+      setIsSaving(true);
+      
+      const payload = {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        contact: editForm.contact.trim().replace(/\s/g, ''),
+      };
+
+      console.log('💾 Saving profile to:', `https://policysaath.com/v1/customer/customers/${customerId}`);
+      console.log('💾 Payload being sent:', JSON.stringify(payload, null, 2));
+      console.log('💾 Customer ID:', customerId);
+
+      const response = await fetch(
+        `https://policysaath.com/v1/customer/customers/${customerId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log('💾 Response status:', response.status);
+      console.log('💾 Response headers:', JSON.stringify([...response.headers.entries()]));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('💾 Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const updatedData = await response.json();
+      console.log('✅ Profile updated - Response:', JSON.stringify(updatedData, null, 2));
+
+      // Update local state
+      setUserProfile(editForm);
+      
+      // Also save to AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(editForm));
+      
+      Alert.alert('Success', 'Profile updated successfully!');
+      setActiveTab('profile'); // Switch back to profile view
+    } catch (error) {
+      console.error('❌ Save profile error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Alert.alert('Save Error', `Failed to save profile: ${errorMessage}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -92,10 +262,6 @@ const ProfileScreen = () => {
 
   const handleAboutApp = () => {
     Alert.alert('About App', 'About app information would be shown here');
-  };
-
-  const handleEditProfile = () => {
-    Alert.alert('Edit Profile', 'Edit profile functionality would be implemented here');
   };
 
   const ProfileMenuItem = ({ 
@@ -148,6 +314,223 @@ const ProfileScreen = () => {
     </TouchableOpacity>
   );
 
+  const tabs = [
+    { id: 'profile', title: 'Profile', icon: '👤' },
+    { id: 'edit', title: 'Edit', icon: '✏️' },
+    { id: 'workout', title: 'Workout', icon: '💪' },
+    { id: 'more', title: 'More', icon: '⚙️' },
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Profile Card */}
+            <View style={styles.profileCard}>
+              <View style={styles.profileInfo}>
+                <View style={styles.avatarContainer}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'U'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{userProfile.name || 'No name set'}</Text>
+                  <Text style={styles.userHandle}>{userProfile.email || '@user'}</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => setActiveTab('edit')}
+              >
+                <Text style={styles.editIcon}>✏️</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Profile Details */}
+            <View style={styles.menuSection}>
+              <View style={styles.profileDetail}>
+                <Text style={styles.profileDetailLabel}>📧 Email</Text>
+                <Text style={styles.profileDetailValue}>{userProfile.email || 'Not set'}</Text>
+              </View>
+              <View style={styles.profileDetail}>
+                <Text style={styles.profileDetailLabel}>📱 Contact</Text>
+                <Text style={styles.profileDetailValue}>{userProfile.contact || 'Not set'}</Text>
+              </View>
+              {/* <View style={styles.profileDetail}>
+                <Text style={styles.profileDetailLabel}>🆔 Customer ID</Text>
+                <Text style={styles.profileDetailValue}>{customerId || 'Not available'}</Text>
+              </View> */}
+            </View>
+
+            {/* Main Menu Section */}
+            <View style={styles.menuSection}>
+              <ProfileMenuItem
+                icon="📋"
+                title="My Policies"
+                subtitle="Manage your insurance policies"
+                onPress={handleMyPolicies}
+                showBadge={true}
+              />
+
+              <ProfileMenuItem
+                icon="🔐"
+                title="Quick Login (Face ID / Touch ID)"
+                subtitle="Secure & quick access"
+                onPress={() => {}}
+                showArrow={false}
+                showSwitch={true}
+                switchValue={quickLoginEnabled}
+                onSwitchChange={setQuickLoginEnabled}
+              />
+
+              <ProfileMenuItem
+                icon="🚪"
+                title="Log out"
+                subtitle="Further secure your account for safety"
+                onPress={handleLogout}
+              />
+            </View>
+          </ScrollView>
+        );
+
+      case 'edit':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.editSection}>
+              <Text style={styles.editTitle}>Edit Profile</Text>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Name *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={editForm.name}
+                  onChangeText={(text) => {
+                    console.log('🔤 Name input changed:', text);
+                    setEditForm({ ...editForm, name: text });
+                  }}
+                  onFocus={() => console.log('🎯 Name input focused')}
+                  onBlur={() => console.log('🎯 Name input blurred')}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#A0B7B3"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Email *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={editForm.email}
+                  onChangeText={(text) => {
+                    console.log('📧 Email input changed:', text);
+                    setEditForm({ ...editForm, email: text });
+                  }}
+                  onFocus={() => console.log('🎯 Email input focused')}
+                  onBlur={() => console.log('🎯 Email input blurred')}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#A0B7B3"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Contact Number</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={editForm.contact}
+                  onChangeText={(text) => {
+                    console.log('📱 Contact input changed:', text);
+                    setEditForm({ ...editForm, contact: text });
+                  }}
+                  onFocus={() => console.log('🎯 Contact input focused')}
+                  onBlur={() => console.log('🎯 Contact input blurred')}
+                  placeholder="Enter your contact number"
+                  placeholderTextColor="#A0B7B3"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                />
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    console.log('🚫 Cancel button pressed');
+                    setEditForm(userProfile);
+                    setActiveTab('profile');
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.saveButton, isSaving && styles.disabledButton]}
+                  onPress={() => {
+                    console.log('💾 Save button pressed');
+                    saveProfile();
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        );
+
+      case 'workout':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.workoutSection}>
+              <Text style={styles.sectionTitle}>Workout Plans</Text>
+              <View style={styles.comingSoonContainer}>
+                <Text style={styles.comingSoonEmoji}>🏋️‍♀️</Text>
+                <Text style={styles.comingSoonTitle}>Workout Features</Text>
+                <Text style={styles.comingSoonSubtitle}>
+                  Coming soon! Track your fitness journey, create workout plans, and monitor your progress.
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        );
+
+      case 'more':
+        return (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>More</Text>
+            </View>
+
+            <View style={styles.menuSection}>
+              <ProfileMenuItem
+                icon="❓"
+                title="Help & Support"
+                subtitle=""
+                onPress={handleHelpSupport}
+              />
+
+              <ProfileMenuItem
+                icon="ℹ️"
+                title="About App"
+                subtitle=""
+                onPress={handleAboutApp}
+              />
+            </View>
+          </ScrollView>
+        );
+
+      default:
+        return <View />;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
@@ -158,97 +541,41 @@ const ProfileScreen = () => {
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
-        <View style={styles.placeholder} />
+        <View style={styles.headerRight}>
+          {isLoading && <ActivityIndicator color="#fff" size="small" />}
+        </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileInfo}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{userProfile.name.charAt(0).toUpperCase()}</Text>
-              </View>
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{userProfile.name}</Text>
-              <Text style={styles.userHandle}>{userProfile.username}</Text>
-            </View>
-          </View>
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={handleEditProfile}
+      {/* Tabs */}
+      {/* <View style={styles.tabContainer}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.id}
+            style={[
+              styles.tab,
+              activeTab === tab.id && styles.activeTab,
+            ]}
+            onPress={() => setActiveTab(tab.id)}
           >
-            <Text style={styles.editIcon}>✏️</Text>
+            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab.id && styles.activeTabText,
+              ]}
+            >
+              {tab.title}
+            </Text>
           </TouchableOpacity>
-        </View>
+        ))}
+      </View> */}
 
-        {/* Main Menu Section */}
-        <View style={styles.menuSection}>
-          <ProfileMenuItem
-            icon="📋"
-            title="My Policies"
-            subtitle="Manage your insurance policies"
-            onPress={handleMyPolicies}
-            showBadge={true}
-          />
+      {/* Tab Content */}
+      <View style={styles.content}>
+        {renderTabContent()}
+      </View>
 
-          <ProfileMenuItem
-            icon="👥"
-            title="Nominees / Dependents"
-            subtitle="Manage your nominees for claims"
-            onPress={handleNominees}
-          />
-
-          <ProfileMenuItem
-            icon="🔒"
-            title="Quick Login (Face ID / Touch ID)"
-            subtitle="Secure & quick access"
-            onPress={() => {}}
-            showArrow={false}
-            showSwitch={true}
-            switchValue={quickLoginEnabled}
-            onSwitchChange={setQuickLoginEnabled}
-          />
-
-          <ProfileMenuItem
-            icon="🛡️"
-            title="Claim Security"
-            subtitle="Add extra protection for claims"
-            onPress={handleClaimSecurity}
-          />
-
-          <ProfileMenuItem
-            icon="🚪"
-            title="Log out"
-            subtitle="Further secure your account for safety"
-            onPress={handleLogout}
-          />
-        </View>
-
-        {/* More Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>More</Text>
-        </View>
-
-        <View style={styles.menuSection}>
-          <ProfileMenuItem
-            icon="❓"
-            title="Help & Support"
-            subtitle=""
-            onPress={handleHelpSupport}
-          />
-
-          <ProfileMenuItem
-            icon="ℹ️"
-            title="About App"
-            subtitle=""
-            onPress={handleAboutApp}
-          />
-        </View>
-
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+      <View style={styles.bottomSpacing} />
     </SafeAreaView>
   );
 };
@@ -279,8 +606,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  placeholder: {
+  headerRight: {
     width: 40,
+    alignItems: 'center',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#4ECDC4',
+  },
+  tabIcon: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  tabText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: '#4ECDC4',
+    fontWeight: '600',
   },
   content: {
     flex: 1,
@@ -348,6 +709,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'white',
   },
+  profileDetail: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8F9FA',
+  },
+  profileDetailLabel: {
+    fontSize: 14,
+    color: '#718096',
+  },
+  profileDetailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2D3748',
+    flex: 1,
+    textAlign: 'right',
+  },
   menuSection: {
     backgroundColor: 'white',
     borderRadius: 16,
@@ -407,6 +788,100 @@ const styles = StyleSheet.create({
     color: '#CBD5E0',
     fontWeight: 'bold',
   },
+  editSection: {
+    flex: 1,
+  },
+  editTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2D3748',
+    marginBottom: 24,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#2D3748',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    padding: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#4ECDC4',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#4ECDC4',
+    padding: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#B0D9D5',
+    opacity: 0.7,
+  },
+  workoutSection: {
+    flex: 1,
+  },
+  comingSoonContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    marginTop: 20,
+  },
+  comingSoonEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  comingSoonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D3748',
+    marginBottom: 8,
+  },
+  comingSoonSubtitle: {
+    fontSize: 14,
+    color: '#718096',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
   sectionHeader: {
     marginBottom: 12,
   },
@@ -417,7 +892,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   bottomSpacing: {
-    height: 40,
+    height: 20,
   },
 });
 

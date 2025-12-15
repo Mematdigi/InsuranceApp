@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,14 @@ import {
   Modal,
   Alert,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
+const API_BASE = "https://policysaath.com/api"
 
 interface DuePolicy {
   _id: string;
@@ -23,10 +26,23 @@ interface DuePolicy {
   productName: string;
   policyType: string;
   premiumAmount: string;
-  dueDate: string;
-  status: 'Due' | 'Overdue';
+  dueDate: string; // This maps to endDate from API
+  status: 'Due' | 'Overdue' | 'Paid';
   company: string;
   isOverdue: boolean;
+}
+
+interface APIPolicy {
+  _id: string;
+  customerId: string;
+  policyNumber: string;
+  productName: string;
+  policyType: string;
+  premiumAmount: string;
+  endDate: string;
+  status: string;
+  insuranceCompany?: string;
+  company?: string;
 }
 
 interface FilterOptions {
@@ -43,65 +59,166 @@ const DuePaymentsScreen = () => {
   const [duePolicies, setDuePolicies] = useState<DuePolicy[]>([]);
   const [filteredPolicies, setFilteredPolicies] = useState<DuePolicy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [sortBy, setSortBy] = useState('Newest First');
+  const [showAlert, setShowAlert] = useState(true);
+  
+  // Dynamic filter options from API data
+  const [availableCompanies, setAvailableCompanies] = useState<string[]>(['All Company']);
+  const [availableTypes, setAvailableTypes] = useState<string[]>(['All Types']);
   
   // Filter state
   const [filters, setFilters] = useState<FilterOptions>({
     company: 'All Company',
     type: 'All Types',
     status: 'All Status',
-    year: '2025'
+    year: new Date().getFullYear().toString()
   });
 
-  // Sample data - replace with API call
-  const sampleDuePolicies: DuePolicy[] = [
-    {
-      _id: '1',
-      customerId: 'user123',
-      policyNumber: '778999',
-      productName: 'TATA AIA Life',
-      policyType: 'Life Insurance',
-      premiumAmount: '1900',
-      dueDate: '24 Jan 2025',
-      status: 'Due',
-      company: 'TATA',
-      isOverdue: false
-    },
-    {
-      _id: '2',
-      customerId: 'user123',
-      policyNumber: '778999',
-      productName: 'TATA AIA Life',
-      policyType: 'Life Insurance',
-      premiumAmount: '1900',
-      dueDate: '24 Jan 2025',
-      status: 'Due',
-      company: 'TATA',
-      isOverdue: false
-    }
-  ];
-
-  useEffect(() => {
-    fetchDuePolicies();
-  }, []);
+  // Fetch policies on mount and when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchDuePolicies();
+    }, [])
+  );
 
   useEffect(() => {
     applyFiltersAndSort();
   }, [duePolicies, filters, sortBy]);
 
+  // Parse date from various formats (dd/mm/yyyy or other formats)
+  const parseDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    
+    // Try dd/mm/yyyy format first (common in Indian format)
+    const ddmmyyyy = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (ddmmyyyy) {
+      const [, day, month, year] = ddmmyyyy;
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    
+    // Try ISO format or other standard formats
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+    
+    return null;
+  };
+
+  // Determine if a policy is overdue based on end date
+  const calculateStatus = (endDateStr: string): { status: 'Due' | 'Overdue' | 'Paid'; isOverdue: boolean } => {
+    const endDate = parseDate(endDateStr);
+    if (!endDate) {
+      return { status: 'Due', isOverdue: false };
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    
+    if (endDate < today) {
+      return { status: 'Overdue', isOverdue: true };
+    }
+    return { status: 'Due', isOverdue: false };
+  };
+
+  // Extract company name from product name or use provided company
+  const extractCompany = (policy: APIPolicy): string => {
+    if (policy.insuranceCompany) return policy.insuranceCompany;
+    if (policy.company) return policy.company;
+    
+    // Try to extract from product name
+    const productName = policy.productName?.toUpperCase() || '';
+    if (productName.includes('TATA')) return 'TATA';
+    if (productName.includes('HDFC')) return 'HDFC';
+    if (productName.includes('LIC')) return 'LIC';
+    if (productName.includes('ICICI')) return 'ICICI';
+    if (productName.includes('MAX')) return 'MAX';
+    if (productName.includes('STAR')) return 'STAR';
+    
+    return 'Other';
+  };
+
   const fetchDuePolicies = async () => {
     try {
-      // Replace with actual API call to get due policies
-      setTimeout(() => {
-        setDuePolicies(sampleDuePolicies);
+      setLoading(true);
+      
+      // Get user from AsyncStorage (equivalent to localStorage in web)
+      const userStr = await AsyncStorage.getItem('user');
+      if (!userStr) {
+        console.warn('❌ User not found in storage');
         setLoading(false);
-      }, 1000);
+        return;
+      }
+      
+      const user = JSON.parse(userStr);
+      if (!user?.id && !user?._id) {
+        console.warn('❌ User ID not found');
+        setLoading(false);
+        return;
+      }
+      
+      const userId = user.id || user._id;
+      console.log('📥 Fetching policies for user ID:', userId);
+      
+      // API call matching web app endpoint
+      const response = await fetch(`${API_BASE}/v1/customer/customer-fetch-policy/${userId}`);
+      const data = await response.json();
+      
+      console.log('📊 Fetched data:', data);
+      
+      if (response.ok && data.policyData) {
+        // Transform API data to match DuePolicy interface
+        // Filter only Due and Overdue policies (exclude Paid ones)
+        const transformedPolicies: DuePolicy[] = data.policyData
+          .map((policy: APIPolicy) => {
+            const { status, isOverdue } = policy.status 
+              ? { status: policy.status as 'Due' | 'Overdue' | 'Paid', isOverdue: policy.status === 'Overdue' }
+              : calculateStatus(policy.endDate);
+            
+            return {
+              _id: policy._id,
+              customerId: policy.customerId,
+              policyNumber: policy.policyNumber || 'N/A',
+              productName: policy.productName || 'Unknown Policy',
+              policyType: policy.policyType || 'General',
+              premiumAmount: policy.premiumAmount?.toString() || '0',
+              dueDate: policy.endDate || 'N/A',
+              status,
+              company: extractCompany(policy),
+              isOverdue,
+            };
+          })
+          .filter((policy: DuePolicy) => policy.status === 'Due' || policy.status === 'Overdue');
+        
+        setDuePolicies(transformedPolicies);
+        
+        // Update available filter options based on fetched data
+        const companies = ['All Company', ...new Set(transformedPolicies.map(p => p.company))];
+        const types = ['All Types', ...new Set(transformedPolicies.map(p => p.policyType).filter(Boolean))];
+        
+        setAvailableCompanies(companies as string[]);
+        setAvailableTypes(types as string[]);
+        
+      } else {
+        console.warn('⚠️ Unexpected policy data structure:', data);
+        Alert.alert('Error', data.msg || 'Failed to fetch policies');
+      }
     } catch (error) {
-      console.error('Error fetching due policies:', error);
+      console.error('🚫 Failed to fetch policies:', error);
+      Alert.alert('Error', 'Failed to load due payments. Please try again.');
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchDuePolicies();
   };
 
   const applyFiltersAndSort = () => {
@@ -120,11 +237,14 @@ const DuePaymentsScreen = () => {
 
     // Apply sorting
     filtered.sort((a, b) => {
+      const dateA = parseDate(a.dueDate)?.getTime() || 0;
+      const dateB = parseDate(b.dueDate)?.getTime() || 0;
+      
       switch (sortBy) {
         case 'Newest First':
-          return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+          return dateB - dateA;
         case 'Oldest First':
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return dateA - dateB;
         case 'Premium High to Low':
           return parseInt(b.premiumAmount) - parseInt(a.premiumAmount);
         case 'Premium Low to High':
@@ -139,12 +259,12 @@ const DuePaymentsScreen = () => {
 
   const handlePayNow = (policy: DuePolicy) => {
     Alert.alert(
-      'Pay Premium',
+      policy.isOverdue ? 'Pay Overdue Premium' : 'Pay Premium',
       `Pay ₹${policy.premiumAmount} for ${policy.productName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Pay Now', 
+          text: policy.isOverdue ? 'Pay Overdue' : 'Pay Now', 
           onPress: () => {
             // Implement payment logic here
             Alert.alert('Payment', 'Payment functionality would be implemented here');
@@ -159,7 +279,7 @@ const DuePaymentsScreen = () => {
       company: 'All Company',
       type: 'All Types',
       status: 'All Status',
-      year: '2025'
+      year: new Date().getFullYear().toString()
     });
   };
 
@@ -169,11 +289,11 @@ const DuePaymentsScreen = () => {
   };
 
   const getOverdueCount = () => {
-    return duePolicies.filter(policy => policy.isOverdue).length;
+    return duePolicies.filter(policy => policy.status === 'Overdue').length;
   };
 
   const getDueCount = () => {
-    return duePolicies.filter(policy => !policy.isOverdue).length;
+    return duePolicies.filter(policy => policy.status === 'Due').length;
   };
 
   const PolicyCard = ({ policy }: { policy: DuePolicy }) => (
@@ -200,7 +320,11 @@ const DuePaymentsScreen = () => {
 
       <View style={styles.cardBody}>
         <Text style={styles.policyType}>{policy.policyType}</Text>
-        <Text style={styles.productName}>{policy.productName}</Text>
+        <Text style={styles.productName} numberOfLines={2}>
+          {policy.productName
+            ? policy.productName.split(" ").slice(0, 3).join(" ")
+            : "N/A"}
+        </Text>
         <Text style={styles.policyNumber}>{policy.policyNumber} 📋</Text>
       </View>
 
@@ -210,11 +334,13 @@ const DuePaymentsScreen = () => {
           <Text style={styles.dueLabel}>Due Date : {policy.dueDate}</Text>
         </View>
         <TouchableOpacity 
-          style={styles.payButton}
+          style={[styles.payButton, policy.isOverdue && styles.overduePayButton]}
           onPress={() => handlePayNow(policy)}
         >
-          <Text style={styles.payButtonIcon}>💳</Text>
-          <Text style={styles.payButtonText}>Pay Now</Text>
+          <Text style={styles.payButtonIcon}>{policy.isOverdue ? '⚠️' : '💳'}</Text>
+          <Text style={styles.payButtonText}>
+            {policy.isOverdue ? 'Pay Overdue' : 'Pay Now'}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -235,11 +361,11 @@ const DuePaymentsScreen = () => {
           </View>
 
           <ScrollView style={styles.filterContent}>
-            {/* Company Filter */}
+            {/* Company Filter - Dynamic from API data */}
             <View style={styles.filterSection}>
               <Text style={styles.filterLabel}>Company</Text>
               <View style={styles.filterRow}>
-                {['All Company', 'TATA', 'HDFC', 'LIC', 'ICICI'].map((company) => (
+                {availableCompanies.map((company) => (
                   <TouchableOpacity
                     key={company}
                     style={[
@@ -259,11 +385,11 @@ const DuePaymentsScreen = () => {
               </View>
             </View>
 
-            {/* Type Filter */}
+            {/* Type Filter - Dynamic from API data */}
             <View style={styles.filterSection}>
               <Text style={styles.filterLabel}>Type</Text>
               <View style={styles.filterRow}>
-                {['All Types', 'Life Insurance', 'Health Insurance', 'Motor Insurance'].map((type) => (
+                {availableTypes.map((type) => (
                   <TouchableOpacity
                     key={type}
                     style={[
@@ -388,21 +514,41 @@ const DuePaymentsScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Alert Banner */}
-        <View style={styles.alertBanner}>
-          <Text style={styles.alertIcon}>⚠️</Text>
-          <View style={styles.alertContent}>
-            <Text style={styles.alertText}>
-              You have <Text style={styles.overdueCount}>{getOverdueCount()} overdue</Text> and <Text style={styles.dueCount}>{getDueCount()} due</Text> policies
-            </Text>
-            <Text style={styles.alertSubtext}>Immediate attention required for overdue policies</Text>
+        {/* Alert Banner - Similar to web app */}
+        {showAlert && (getOverdueCount() > 0 || getDueCount() > 0) && (
+          <View style={styles.alertBanner}>
+            <Text style={styles.alertIcon}>⚠️</Text>
+            <View style={styles.alertContent}>
+              <Text style={styles.alertText}>
+                You have <Text style={styles.overdueCount}>{getOverdueCount()} overdue</Text> and <Text style={styles.dueCount}>{getDueCount()} due</Text> policies
+              </Text>
+              <Text style={styles.alertSubtext}>Immediate attention required for overdue policies</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.alertCloseButton}
+              onPress={() => setShowAlert(false)}
+            >
+              <Text style={styles.alertCloseIcon}>✕</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+        )}
 
         {/* Policy List */}
-        <ScrollView style={styles.policyList} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.policyList} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#4ECDC4']}
+              tintColor="#4ECDC4"
+            />
+          }
+        >
           {loading ? (
             <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#4ECDC4" />
               <Text style={styles.loadingText}>Loading due payments...</Text>
             </View>
           ) : filteredPolicies.length > 0 ? (
@@ -411,6 +557,7 @@ const DuePaymentsScreen = () => {
             ))
           ) : (
             <View style={styles.noPoliciesContainer}>
+              <Text style={styles.noPoliciesEmoji}>🎉</Text>
               <Text style={styles.noPoliciesText}>No due payments found</Text>
               <Text style={styles.noPoliciesSubtext}>All your premiums are up to date!</Text>
             </View>
@@ -555,6 +702,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#856404',
   },
+  alertCloseButton: {
+    padding: 4,
+  },
+  alertCloseIcon: {
+    fontSize: 16,
+    color: '#856404',
+  },
   policyList: {
     flex: 1,
   },
@@ -566,11 +720,16 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#61BACA',
+    marginTop: 12,
   },
   noPoliciesContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
+  },
+  noPoliciesEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
   },
   noPoliciesText: {
     fontSize: 18,
@@ -673,10 +832,13 @@ const styles = StyleSheet.create({
   payButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#4ECDC4',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
+  },
+  overduePayButton: {
+    backgroundColor: '#FF6B6B',
   },
   payButtonIcon: {
     fontSize: 14,
@@ -690,7 +852,7 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 20,
   },
-  // Modal Styles (reused from My Policy screen)
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -744,6 +906,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
     borderWidth: 1,
     borderColor: '#E8F6F3',
+    marginRight: 8,
+    marginBottom: 8,
   },
   activeFilterChip: {
     backgroundColor: '#4ECDC4',
