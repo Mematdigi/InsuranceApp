@@ -433,15 +433,15 @@ const resetHeader = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/register`, {
+      const response = await fetch(`${API_BASE}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: registerName,
           email: registerEmail,
-          mobile: registerMobile,
+          contactNumber: registerMobile,
           password: registerPassword,
-          role: role.toLowerCase()
+          role,
         }),
       });
       
