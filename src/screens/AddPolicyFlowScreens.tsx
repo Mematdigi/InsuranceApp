@@ -1,15 +1,11 @@
 /**
- * AddPolicyFlowScreens.tsx - Enhanced with Camera & Gallery Support
- * 
- * IMPORTANT: Required packages:
+ * AddPolicyFlowScreens.tsx - Enhanced with Camera & Gallery Support + Toggle Tabs
+ *
+ * Required packages:
  * npm install @react-native-documents/picker react-native-image-picker
- * 
+ *
  * For iOS: cd ios && pod install
- * 
- * Requirements:
- * - React Native 0.78+
- * - iOS 14 or later
- * - Android: Update AndroidManifest.xml with camera permissions
+ * Android: Ensure camera permissions in AndroidManifest.xml
  */
 
 import React, { useState } from 'react';
@@ -27,11 +23,46 @@ import {
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+
 // PDF Picker
 import { pick, types } from '@react-native-documents/picker';
+
 // Camera & Gallery
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+
+// ✅ IMPORTANT: screens are in src/screens, context is in src/context
 import { useAuth } from '../context/AuthContext';
+
+// ======================
+// Reusable Toggle Tabs
+// ======================
+const AddPolicyToggleTabs = ({ activeTab }: { activeTab: 'upload' | 'manual' }) => {
+  const navigation = useNavigation<any>();
+
+  return (
+    <View style={styles.tabContainer}>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'upload' && styles.activeTab]}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('ChooseCompany')}
+      >
+        <Text style={[styles.tabText, activeTab === 'upload' && styles.activeTabText]}>
+          ⬆️ Upload Policy
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'manual' && styles.activeTab]}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('FillManually')}
+      >
+        <Text style={[styles.tabText, activeTab === 'manual' && styles.activeTabText]}>
+          📝 Fill Manually
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 // ======================
 // Screen 1: Choose Company
@@ -41,7 +72,7 @@ const ChooseCompanyScreen = () => {
   const [selectedCompany, setSelectedCompany] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const { customerId } = useAuth();
-  
+
   const insuranceCompanies = [
     'Tata AIA Life Insurance',
     'Tata AIG General Insurance Company',
@@ -61,23 +92,23 @@ const ChooseCompanyScreen = () => {
       Alert.alert('Selection Required', 'Please choose an insurance company');
       return;
     }
-    
+
     if (!customerId) {
       Alert.alert('Error', 'User not authenticated. Please login again.');
       return;
     }
-    
-    console.log('Using customerId:', customerId);
-    
-    navigation.navigate('AddPolicyStep2', {
-      company: selectedCompany,
-    });
+
+    navigation.navigate('AddPolicyStep2', { company: selectedCompany });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      <ScrollView style={styles.content}>
+
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+        {/* ✅ Toggle Tabs */}
+        <AddPolicyToggleTabs activeTab="upload" />
+
         <Text style={styles.headerTitle}>Choose Your Insurance Company</Text>
 
         {/* Search */}
@@ -101,6 +132,7 @@ const ChooseCompanyScreen = () => {
                 selectedCompany === company && styles.selectedCompanyItem,
               ]}
               onPress={() => setSelectedCompany(company)}
+              activeOpacity={0.85}
             >
               <Text
                 style={[
@@ -119,6 +151,7 @@ const ChooseCompanyScreen = () => {
           style={[styles.continueButton, !selectedCompany && styles.disabledButton]}
           onPress={handleContinue}
           disabled={!selectedCompany}
+          activeOpacity={0.9}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
@@ -128,17 +161,17 @@ const ChooseCompanyScreen = () => {
 };
 
 // ======================
-// Screen 2: Insurance Number + PDF/Camera/Gallery Upload (Combined)
+// Screen 2: Insurance Number + Upload (Combined)
 // ======================
 const InsuranceNumberScreen = ({ route }: any) => {
   const navigation = useNavigation<any>();
   const { company } = route.params || {};
   const { customerId } = useAuth();
-  
+
   // Policy number state
   const [insuranceNumber, setInsuranceNumber] = useState('');
   const [policyNumberEntered, setPolicyNumberEntered] = useState(false);
-  
+
   // Upload states
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('');
@@ -148,13 +181,11 @@ const InsuranceNumberScreen = ({ route }: any) => {
   const [insuredMembers, setInsuredMembers] = useState<any[]>([]);
 
   const handleContinueOrSkip = (skipped = false) => {
-    if (skipped) {
-      setInsuranceNumber('');
-    }
+    if (skipped) setInsuranceNumber('');
     setPolicyNumberEntered(true);
   };
 
-  /** PDF Upload functionality */
+  /** PDF Upload */
   const handlePDFUpload = async () => {
     if (!customerId) {
       Alert.alert('Error', 'User not authenticated. Please login again.');
@@ -168,10 +199,7 @@ const InsuranceNumberScreen = ({ route }: any) => {
       });
 
       const res = result[0];
-      if (!res) {
-        console.log('No file selected');
-        return;
-      }
+      if (!res) return;
 
       const fileName = res.name ?? 'unknown.pdf';
       const fileUri = res.uri ?? '';
@@ -197,10 +225,7 @@ const InsuranceNumberScreen = ({ route }: any) => {
 
       const response = await fetch(
         `https://policysaath.com/api/v1/customer/pdf-reader/${customerId}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+        { method: 'POST', body: formData }
       );
 
       if (!response.ok) {
@@ -214,18 +239,14 @@ const InsuranceNumberScreen = ({ route }: any) => {
       setInsuredMembers(data.insuredMembers || []);
       Alert.alert('Success', 'PDF parsed successfully!');
     } catch (err: any) {
-      if (err.message?.includes('User canceled') || err.message?.includes('cancelled')) {
-        console.log('User cancelled picker');
-      } else {
-        console.error('Upload error:', err);
-        Alert.alert('Error', `Failed to upload or parse PDF: ${err.message}`);
-      }
+      console.error('PDF upload error:', err);
+      Alert.alert('Error', `Upload failed: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
   };
 
-  /** Camera Capture functionality */
+  /** Camera */
   const handleCameraCapture = async () => {
     if (!customerId) {
       Alert.alert('Error', 'User not authenticated. Please login again.');
@@ -242,20 +263,15 @@ const InsuranceNumberScreen = ({ route }: any) => {
         saveToPhotos: false,
       });
 
-      if (result.didCancel) {
-        console.log('User cancelled camera');
-        return;
-      }
+      if (result.didCancel) return;
 
       if (result.errorCode) {
-        console.error('Camera Error:', result.errorMessage);
-        Alert.alert('Error', 'Failed to capture image');
+        Alert.alert('Error', result.errorMessage || 'Failed to capture image');
         return;
       }
 
       if (result.assets && result.assets.length > 0) {
-        const photo = result.assets[0];
-        await uploadImage(photo);
+        await uploadImage(result.assets[0]);
       }
     } catch (err) {
       console.error('Camera error:', err);
@@ -263,7 +279,7 @@ const InsuranceNumberScreen = ({ route }: any) => {
     }
   };
 
-  /** Gallery Selection functionality */
+  /** Gallery */
   const handleGallerySelection = async () => {
     if (!customerId) {
       Alert.alert('Error', 'User not authenticated. Please login again.');
@@ -280,20 +296,15 @@ const InsuranceNumberScreen = ({ route }: any) => {
         selectionLimit: 1,
       });
 
-      if (result.didCancel) {
-        console.log('User cancelled gallery');
-        return;
-      }
+      if (result.didCancel) return;
 
       if (result.errorCode) {
-        console.error('Gallery Error:', result.errorMessage);
-        Alert.alert('Error', 'Failed to select image');
+        Alert.alert('Error', result.errorMessage || 'Failed to select image');
         return;
       }
 
       if (result.assets && result.assets.length > 0) {
-        const photo = result.assets[0];
-        await uploadImage(photo);
+        await uploadImage(result.assets[0]);
       }
     } catch (err) {
       console.error('Gallery error:', err);
@@ -301,7 +312,7 @@ const InsuranceNumberScreen = ({ route }: any) => {
     }
   };
 
-  /** Upload Image (Camera or Gallery) */
+  /** Upload Image (Camera/Gallery) */
   const uploadImage = async (photo: any) => {
     try {
       const fileName = photo.fileName || `photo_${Date.now()}.jpg`;
@@ -321,13 +332,9 @@ const InsuranceNumberScreen = ({ route }: any) => {
       } as any);
       formData.append('insuranceCompney', company);
 
-      // Use the same endpoint - backend should handle both PDF and images
       const response = await fetch(
         `https://policysaath.com/api/v1/customer/pdf-reader/${customerId}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+        { method: 'POST', body: formData }
       );
 
       if (!response.ok) {
@@ -342,88 +349,58 @@ const InsuranceNumberScreen = ({ route }: any) => {
       Alert.alert('Success', 'Image uploaded and processed successfully!');
     } catch (err: any) {
       console.error('Upload error:', err);
-      Alert.alert('Error', `Failed to upload image: ${err.message}`);
+      Alert.alert('Error', `Upload failed: ${err.message}`);
       setImagePreview(null);
     } finally {
       setIsUploading(false);
     }
   };
 
-  /** Show Upload Options */
+  /** Upload Options popup */
   const showUploadOptions = () => {
-    Alert.alert(
-      'Upload Policy Document',
-      'Choose how you want to upload your policy document',
-      [
-        {
-          text: 'Take Photo',
-          onPress: handleCameraCapture,
-        },
-        {
-          text: 'Choose from Gallery',
-          onPress: handleGallerySelection,
-        },
-        {
-          text: 'Select PDF',
-          onPress: handlePDFUpload,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ],
-      { cancelable: true }
-    );
+    Alert.alert('Upload Policy Document', 'Choose your upload method', [
+      { text: 'Take Photo', onPress: handleCameraCapture },
+      { text: 'Choose from Gallery', onPress: handleGallerySelection },
+      { text: 'Select PDF', onPress: handlePDFUpload },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
-  /** Save parsed policy */
+  /** Save Policy */
   const handleSavePolicy = async () => {
     if (!pdfData?.policyNumber) {
-      Alert.alert('Error', 'No policy data found. Please upload a document first.');
+      Alert.alert('Error', 'No policy data found');
       return;
     }
 
     try {
       setIsUploading(true);
-      
+
       const payload = {
         policyHolder: {
           customerId,
-          insuranceNumber,
-          ...pdfData,
+          ...pdfData, // ✅ fixed
         },
         insuredMembers,
       };
 
       const saveUrl = `https://policysaath.com/api/v1/customer/save-pdf-reader/${customerId}`;
-      console.log('💾 Save URL:', saveUrl);
-      console.log('💾 Payload:', JSON.stringify(payload, null, 2));
 
       const response = await fetch(saveUrl, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify(payload),
       });
 
-      console.log('💾 Response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-      }
-
-      const result = await response.json();
-      console.log('💾 Success:', result);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       Alert.alert('Success', 'Policy saved successfully!');
       navigation.navigate('CustomerDashboard');
-
-    } catch (err) {
-      console.error('💾 Save error:', err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Save Error', `Failed to save: ${errorMessage}`);
+    } catch (err: any) {
+      Alert.alert('Save Error', `Failed to save: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -432,94 +409,101 @@ const InsuranceNumberScreen = ({ route }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      <ScrollView style={styles.content}>
-        <Text style={styles.headerTitle}>Insurance Details</Text>
 
-        {/* Policy Number Section */}
-        {!policyNumberEntered && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Insurance Number (Optional)</Text>
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+        {/* ✅ Toggle Tabs */}
+        <AddPolicyToggleTabs activeTab="upload" />
+
+        {!policyNumberEntered ? (
+          <>
+            <Text style={styles.headerTitle}>Insurance Number (Optional)</Text>
+
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoText}>
+                Company: <Text style={{ fontWeight: '700' }}>{company || 'N/A'}</Text>
+              </Text>
+            </View>
+
             <TextInput
               style={styles.textInput}
-              placeholder="Enter Insurance Number"
+              placeholder="Enter insurance number (optional)"
+              placeholderTextColor="#A0B7B3"
               value={insuranceNumber}
               onChangeText={setInsuranceNumber}
-              autoCapitalize="characters"
             />
 
             <View style={styles.buttonRow}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.skipButton}
                 onPress={() => handleContinueOrSkip(true)}
+                activeOpacity={0.9}
               >
                 <Text style={styles.skipButtonText}>Skip</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.continueButtonInRow, !insuranceNumber && styles.disabledButton]}
+                style={styles.continueButtonInRow}
                 onPress={() => handleContinueOrSkip(false)}
-                disabled={!insuranceNumber}
+                activeOpacity={0.9}
               >
                 <Text style={styles.continueButtonText}>Continue</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        )}
 
-        {/* Upload Section */}
-        {policyNumberEntered && (
+            {/* Optional: If you want direct "upload-only" screen */}
+            <TouchableOpacity
+              style={[styles.secondaryNavButton]}
+              onPress={() =>
+                navigation.navigate('UploadPolicy', {
+                  company,
+                  insuranceNumber,
+                })
+              }
+              activeOpacity={0.9}
+            >
+              <Text style={styles.secondaryNavButtonText}>Go to Upload Screen →</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
           <>
-            <Text style={styles.sectionTitle}>Upload Your Policy Document</Text>
-            
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoText}>
-                ℹ️ Company: {company}
-              </Text>
-            </View>
+            <Text style={styles.headerTitle}>Upload Your Policy</Text>
 
-            {/* Upload Options */}
             <View style={styles.uploadOptionsContainer}>
-              {/* PDF Upload */}
               <TouchableOpacity
                 style={[styles.uploadOption, isUploading && styles.uploadingOption]}
                 onPress={handlePDFUpload}
                 disabled={isUploading}
+                activeOpacity={0.9}
               >
                 <Text style={styles.uploadOptionTitle}>📄 Import PDF</Text>
-                <Text style={styles.uploadOptionSubtitle}>
-                  Select a PDF document
-                </Text>
+                <Text style={styles.uploadOptionSubtitle}>Select a PDF document</Text>
               </TouchableOpacity>
 
-              {/* Camera Capture */}
               <TouchableOpacity
                 style={[styles.uploadOption, isUploading && styles.uploadingOption]}
                 onPress={handleCameraCapture}
                 disabled={isUploading}
+                activeOpacity={0.9}
               >
                 <Text style={styles.uploadOptionTitle}>📷 Take Photo</Text>
-                <Text style={styles.uploadOptionSubtitle}>
-                  Capture with camera
-                </Text>
+                <Text style={styles.uploadOptionSubtitle}>Capture with camera</Text>
               </TouchableOpacity>
 
-              {/* Gallery Selection */}
               <TouchableOpacity
                 style={[styles.uploadOption, isUploading && styles.uploadingOption]}
                 onPress={handleGallerySelection}
                 disabled={isUploading}
+                activeOpacity={0.9}
               >
                 <Text style={styles.uploadOptionTitle}>🖼️ Choose from Gallery</Text>
-                <Text style={styles.uploadOptionSubtitle}>
-                  Select from photos
-                </Text>
+                <Text style={styles.uploadOptionSubtitle}>Select from photos</Text>
               </TouchableOpacity>
 
-              {/* Quick Upload Button */}
               <TouchableOpacity
                 style={[styles.quickUploadButton, isUploading && styles.uploadingOption]}
                 onPress={showUploadOptions}
                 disabled={isUploading}
+                activeOpacity={0.9}
               >
                 <Text style={styles.quickUploadIcon}>⚡</Text>
                 <Text style={styles.quickUploadText}>Quick Upload</Text>
@@ -527,7 +511,6 @@ const InsuranceNumberScreen = ({ route }: any) => {
               </TouchableOpacity>
             </View>
 
-            {/* Loading Indicator */}
             {isUploading && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#4ECDC4" />
@@ -535,20 +518,14 @@ const InsuranceNumberScreen = ({ route }: any) => {
               </View>
             )}
 
-            {/* Image Preview */}
             {imagePreview && !isUploading && (
               <View style={styles.previewContainer}>
                 <Text style={styles.previewTitle}>Image Preview:</Text>
-                <Image
-                  source={{ uri: imagePreview }}
-                  style={styles.previewImage}
-                  resizeMode="contain"
-                />
+                <Image source={{ uri: imagePreview }} style={styles.previewImage} resizeMode="contain" />
                 <Text style={styles.previewFileName}>{uploadedFileName}</Text>
               </View>
             )}
 
-            {/* Uploaded File Info */}
             {uploadedFileName && !isUploading && !imagePreview && (
               <View style={styles.uploadedFileContainer}>
                 <Text style={styles.uploadedFileTitle}>Uploaded File:</Text>
@@ -558,32 +535,25 @@ const InsuranceNumberScreen = ({ route }: any) => {
               </View>
             )}
 
-            {/* Policy Data Display */}
             {pdfData && !isUploading && (
               <View style={styles.pdfDataContainer}>
                 <Text style={styles.pdfDataTitle}>✅ Policy Details Extracted</Text>
-                <Text style={styles.pdfDataText}>
-                  Policy Number: {pdfData.policyNumber || 'N/A'}
-                </Text>
+                <Text style={styles.pdfDataText}>Policy Number: {pdfData.policyNumber || 'N/A'}</Text>
                 {pdfData.policyHolderName && (
-                  <Text style={styles.pdfDataText}>
-                    Policy Holder: {pdfData.policyHolderName}
-                  </Text>
+                  <Text style={styles.pdfDataText}>Policy Holder: {pdfData.policyHolderName}</Text>
                 )}
                 {insuredMembers.length > 0 && (
-                  <Text style={styles.pdfDataText}>
-                    Insured Members: {insuredMembers.length}
-                  </Text>
+                  <Text style={styles.pdfDataText}>Insured Members: {insuredMembers.length}</Text>
                 )}
               </View>
             )}
 
-            {/* Save Button */}
             {pdfData && (
               <TouchableOpacity
                 style={[styles.completeButton, isUploading && styles.disabledButton]}
                 onPress={handleSavePolicy}
                 disabled={isUploading}
+                activeOpacity={0.9}
               >
                 {isUploading ? (
                   <ActivityIndicator color="#fff" />
@@ -593,10 +563,10 @@ const InsuranceNumberScreen = ({ route }: any) => {
               </TouchableOpacity>
             )}
 
-            {/* Back Button */}
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => setPolicyNumberEntered(false)}
+              activeOpacity={0.9}
             >
               <Text style={styles.backButtonText}>← Edit Insurance Number</Text>
             </TouchableOpacity>
@@ -614,7 +584,7 @@ const UploadPolicyScreen = ({ route }: any) => {
   const navigation = useNavigation<any>();
   const { company } = route.params || {};
   const { customerId } = useAuth();
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('');
   const [uploadedFileType, setUploadedFileType] = useState<'pdf' | 'image' | null>(null);
@@ -622,10 +592,9 @@ const UploadPolicyScreen = ({ route }: any) => {
   const [pdfData, setPdfData] = useState<any>(null);
   const [insuredMembers, setInsuredMembers] = useState<any[]>([]);
 
-  /** PDF Upload */
   const handlePDFUpload = async () => {
     if (!customerId) {
-      Alert.alert('Error', 'User not authenticated');
+      Alert.alert('Error', 'User not authenticated. Please login again.');
       return;
     }
 
@@ -642,6 +611,11 @@ const UploadPolicyScreen = ({ route }: any) => {
       const fileUri = res.uri ?? '';
       const fileType = res.type ?? 'application/pdf';
 
+      if (!fileName.toLowerCase().endsWith('.pdf')) {
+        Alert.alert('Error', 'Please select a PDF file');
+        return;
+      }
+
       setUploadedFileName(fileName);
       setUploadedFileType('pdf');
       setImagePreview(null);
@@ -657,10 +631,7 @@ const UploadPolicyScreen = ({ route }: any) => {
 
       const response = await fetch(
         `https://policysaath.com/api/v1/customer/pdf-reader/${customerId}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+        { method: 'POST', body: formData }
       );
 
       if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
@@ -670,18 +641,15 @@ const UploadPolicyScreen = ({ route }: any) => {
       setInsuredMembers(data.insuredMembers || []);
       Alert.alert('Success', 'PDF parsed successfully!');
     } catch (err: any) {
-      if (!err.message?.includes('canceled') && !err.message?.includes('cancelled')) {
-        Alert.alert('Error', `Upload failed: ${err.message}`);
-      }
+      Alert.alert('Error', `Upload failed: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
   };
 
-  /** Camera Capture */
   const handleCameraCapture = async () => {
     if (!customerId) {
-      Alert.alert('Error', 'User not authenticated');
+      Alert.alert('Error', 'User not authenticated. Please login again.');
       return;
     }
 
@@ -695,22 +663,21 @@ const UploadPolicyScreen = ({ route }: any) => {
 
       if (result.didCancel) return;
       if (result.errorCode) {
-        Alert.alert('Error', 'Failed to capture image');
+        Alert.alert('Error', result.errorMessage || 'Failed to capture image');
         return;
       }
 
       if (result.assets && result.assets.length > 0) {
         await uploadImage(result.assets[0]);
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to open camera');
     }
   };
 
-  /** Gallery Selection */
   const handleGallerySelection = async () => {
     if (!customerId) {
-      Alert.alert('Error', 'User not authenticated');
+      Alert.alert('Error', 'User not authenticated. Please login again.');
       return;
     }
 
@@ -718,26 +685,23 @@ const UploadPolicyScreen = ({ route }: any) => {
       const result = await launchImageLibrary({
         mediaType: 'photo',
         quality: 0.8,
-        maxWidth: 1920,
-        maxHeight: 1920,
         selectionLimit: 1,
       });
 
       if (result.didCancel) return;
       if (result.errorCode) {
-        Alert.alert('Error', 'Failed to select image');
+        Alert.alert('Error', result.errorMessage || 'Failed to select image');
         return;
       }
 
       if (result.assets && result.assets.length > 0) {
         await uploadImage(result.assets[0]);
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to open gallery');
     }
   };
 
-  /** Upload Image */
   const uploadImage = async (photo: any) => {
     try {
       const fileName = photo.fileName || `photo_${Date.now()}.jpg`;
@@ -759,10 +723,7 @@ const UploadPolicyScreen = ({ route }: any) => {
 
       const response = await fetch(
         `https://policysaath.com/api/v1/customer/pdf-reader/${customerId}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+        { method: 'POST', body: formData }
       );
 
       if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
@@ -779,21 +740,6 @@ const UploadPolicyScreen = ({ route }: any) => {
     }
   };
 
-  /** Show Upload Options */
-  const showUploadOptions = () => {
-    Alert.alert(
-      'Upload Policy Document',
-      'Choose your upload method',
-      [
-        { text: 'Take Photo', onPress: handleCameraCapture },
-        { text: 'Choose from Gallery', onPress: handleGallerySelection },
-        { text: 'Select PDF', onPress: handlePDFUpload },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
-
-  /** Save Policy */
   const handleSavePolicy = async () => {
     if (!pdfData?.policyNumber) {
       Alert.alert('Error', 'No policy data found');
@@ -802,7 +748,7 @@ const UploadPolicyScreen = ({ route }: any) => {
 
     try {
       setIsUploading(true);
-      
+
       const payload = {
         policyHolder: {
           customerId,
@@ -812,19 +758,17 @@ const UploadPolicyScreen = ({ route }: any) => {
       };
 
       const saveUrl = `https://policysaath.com/api/v1/customer/save-pdf-reader/${customerId}`;
-      
+
       const response = await fetch(saveUrl, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       Alert.alert('Success', 'Policy saved successfully!');
       navigation.navigate('CustomerDashboard');
@@ -835,58 +779,66 @@ const UploadPolicyScreen = ({ route }: any) => {
     }
   };
 
+  const showUploadOptions = () => {
+    Alert.alert('Upload Policy Document', 'Choose your upload method', [
+      { text: 'Take Photo', onPress: handleCameraCapture },
+      { text: 'Choose from Gallery', onPress: handleGallerySelection },
+      { text: 'Select PDF', onPress: handlePDFUpload },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      <ScrollView style={styles.content}>
+
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+        {/* ✅ Toggle Tabs */}
+        <AddPolicyToggleTabs activeTab="upload" />
+
         <Text style={styles.headerTitle}>Upload Your Policy</Text>
-        
-        {/* Upload Options */}
-        <TouchableOpacity 
-          style={[styles.uploadOption, isUploading && styles.uploadingOption]} 
+
+        <TouchableOpacity
+          style={[styles.uploadOption, isUploading && styles.uploadingOption]}
           onPress={handlePDFUpload}
           disabled={isUploading}
+          activeOpacity={0.9}
         >
           <Text style={styles.uploadOptionTitle}>📄 Import PDF</Text>
-          <Text style={styles.uploadOptionSubtitle}>
-            Select a PDF document
-          </Text>
+          <Text style={styles.uploadOptionSubtitle}>Select a PDF document</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.uploadOption, isUploading && styles.uploadingOption]} 
+        <TouchableOpacity
+          style={[styles.uploadOption, isUploading && styles.uploadingOption]}
           onPress={handleCameraCapture}
           disabled={isUploading}
+          activeOpacity={0.9}
         >
           <Text style={styles.uploadOptionTitle}>📷 Take Photo</Text>
-          <Text style={styles.uploadOptionSubtitle}>
-            Capture with camera
-          </Text>
+          <Text style={styles.uploadOptionSubtitle}>Capture with camera</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.uploadOption, isUploading && styles.uploadingOption]} 
+        <TouchableOpacity
+          style={[styles.uploadOption, isUploading && styles.uploadingOption]}
           onPress={handleGallerySelection}
           disabled={isUploading}
+          activeOpacity={0.9}
         >
           <Text style={styles.uploadOptionTitle}>🖼️ Choose from Gallery</Text>
-          <Text style={styles.uploadOptionSubtitle}>
-            Select from photos
-          </Text>
+          <Text style={styles.uploadOptionSubtitle}>Select from photos</Text>
         </TouchableOpacity>
 
-        {/* Quick Upload */}
-        <TouchableOpacity 
-          style={[styles.quickUploadButton, isUploading && styles.uploadingOption]} 
+        <TouchableOpacity
+          style={[styles.quickUploadButton, isUploading && styles.uploadingOption]}
           onPress={showUploadOptions}
           disabled={isUploading}
+          activeOpacity={0.9}
         >
           <Text style={styles.quickUploadIcon}>⚡</Text>
           <Text style={styles.quickUploadText}>Quick Upload</Text>
           <Text style={styles.quickUploadSubtext}>All options in one</Text>
         </TouchableOpacity>
 
-        {/* Loading */}
         {isUploading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4ECDC4" />
@@ -894,39 +846,30 @@ const UploadPolicyScreen = ({ route }: any) => {
           </View>
         )}
 
-        {/* Image Preview */}
         {imagePreview && !isUploading && (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Preview:</Text>
-            <Image
-              source={{ uri: imagePreview }}
-              style={styles.previewImage}
-              resizeMode="contain"
-            />
+            <Image source={{ uri: imagePreview }} style={styles.previewImage} resizeMode="contain" />
+            <Text style={styles.previewFileName}>{uploadedFileName}</Text>
           </View>
         )}
 
-        {/* Policy Data */}
         {pdfData && !isUploading && (
           <View style={styles.pdfDataContainer}>
-            <Text style={styles.pdfDataTitle}>Policy Details</Text>
-            <Text style={styles.pdfDataText}>
-              Policy Number: {pdfData.policyNumber || 'N/A'}
-            </Text>
+            <Text style={styles.pdfDataTitle}>✅ Policy Details Extracted</Text>
+            <Text style={styles.pdfDataText}>Policy Number: {pdfData.policyNumber || 'N/A'}</Text>
             {pdfData.policyHolderName && (
-              <Text style={styles.pdfDataText}>
-                Policy Holder: {pdfData.policyHolderName}
-              </Text>
+              <Text style={styles.pdfDataText}>Policy Holder: {pdfData.policyHolderName}</Text>
             )}
           </View>
         )}
 
-        {/* Save Button */}
         {pdfData && (
           <TouchableOpacity
             style={[styles.completeButton, isUploading && styles.disabledButton]}
             onPress={handleSavePolicy}
             disabled={isUploading}
+            activeOpacity={0.9}
           >
             {isUploading ? (
               <ActivityIndicator color="#fff" />
@@ -944,29 +887,56 @@ const UploadPolicyScreen = ({ route }: any) => {
 // Styles
 // ======================
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#F0F9F8' 
+  container: {
+    flex: 1,
+    backgroundColor: '#F0F9F8',
   },
-  content: { 
-    flex: 1, 
-    padding: 20 
+  content: {
+    flex: 1,
+    padding: 20,
   },
-  headerTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: '#4ECDC4', 
-    marginBottom: 16 
+
+  // ✅ Tabs (same feel as your manual screen)
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  section: {
-    marginBottom: 24,
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 16,
+  activeTab: {
+    backgroundColor: '#4ECDC4',
+  },
+  tabText: {
+    fontSize: 14,
+    color: '#61BACA',
     fontWeight: '600',
-    color: '#4ECDC4',
-    marginBottom: 12,
   },
+  activeTabText: {
+    fontSize: 14,
+    color: 'white',
+    fontWeight: '600',
+  },
+
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4ECDC4',
+    marginBottom: 16,
+  },
+
   searchSection: {
     backgroundColor: 'white',
     padding: 12,
@@ -978,12 +948,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  searchInput: { 
-    fontSize: 16, 
-    color: '#4ECDC4' 
+  searchInput: {
+    fontSize: 16,
+    color: '#4ECDC4',
   },
-  companyList: { 
-    marginBottom: 20 
+
+  companyList: {
+    marginBottom: 20,
   },
   companyItem: {
     backgroundColor: 'white',
@@ -996,17 +967,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  selectedCompanyItem: { 
-    backgroundColor: '#4ECDC4' 
+  selectedCompanyItem: {
+    backgroundColor: '#4ECDC4',
   },
-  companyText: { 
-    fontSize: 16, 
-    color: '#4ECDC4', 
-    fontWeight: '600' 
+  companyText: {
+    fontSize: 16,
+    color: '#4ECDC4',
+    fontWeight: '600',
   },
-  selectedCompanyText: { 
-    color: 'white' 
+  selectedCompanyText: {
+    color: 'white',
   },
+
   textInput: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -1020,9 +992,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  buttonRow: { 
-    flexDirection: 'row', 
-    gap: 12 
+
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
   },
   skipButton: {
     flex: 0.4,
@@ -1032,9 +1006,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
   },
-  skipButtonText: { 
-    color: '#4ECDC4', 
-    fontWeight: '600' 
+  skipButtonText: {
+    color: '#4ECDC4',
+    fontWeight: '600',
   },
   continueButtonInRow: {
     flex: 0.6,
@@ -1043,10 +1017,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
   },
-  continueButtonText: { 
-    color: 'white', 
-    fontWeight: 'bold' 
-  },
+
   continueButton: {
     backgroundColor: '#4ECDC4',
     padding: 16,
@@ -1054,10 +1025,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  disabledButton: { 
+  continueButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  disabledButton: {
     backgroundColor: '#B0D9D5',
     opacity: 0.7,
   },
+
+  secondaryNavButton: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    padding: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  secondaryNavButtonText: {
+    color: '#4ECDC4',
+    fontWeight: '700',
+  },
+
   infoContainer: {
     backgroundColor: 'white',
     padding: 12,
@@ -1071,6 +1060,7 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '500',
   },
+
   uploadOptionsContainer: {
     marginBottom: 16,
   },
@@ -1088,16 +1078,17 @@ const styles = StyleSheet.create({
   uploadingOption: {
     opacity: 0.7,
   },
-  uploadOptionTitle: { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    color: '#4ECDC4' 
+  uploadOptionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4ECDC4',
   },
-  uploadOptionSubtitle: { 
-    fontSize: 14, 
-    color: '#61BACA', 
-    marginTop: 4 
+  uploadOptionSubtitle: {
+    fontSize: 14,
+    color: '#61BACA',
+    marginTop: 4,
   },
+
   quickUploadButton: {
     backgroundColor: '#4ECDC4',
     padding: 24,
@@ -1124,6 +1115,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
   },
+
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+
+  previewContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  previewTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4ECDC4',
+    marginBottom: 10,
+  },
+  previewImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+  },
+  previewFileName: {
+    marginTop: 10,
+    color: '#333',
+    fontWeight: '600',
+  },
+
+  uploadedFileContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  uploadedFileTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4ECDC4',
+    marginBottom: 8,
+  },
+  uploadedFileName: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+  },
+
+  pdfDataContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  pdfDataTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#4ECDC4',
+    marginBottom: 10,
+  },
+  pdfDataText: {
+    color: '#333',
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+
   completeButton: {
     backgroundColor: '#4ECDC4',
     padding: 16,
@@ -1131,104 +1192,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  completeButtonText: { 
-    color: 'white', 
-    fontWeight: 'bold' 
+  completeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
+
   backButton: {
-    padding: 12,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   backButtonText: {
     color: '#4ECDC4',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#4ECDC4',
-    fontWeight: '500',
-  },
-  previewContainer: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  previewTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
-    marginBottom: 12,
-  },
-  previewImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#F0F9F8',
-  },
-  previewFileName: {
-    fontSize: 12,
-    color: '#61BACA',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  uploadedFileContainer: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  uploadedFileTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
-    marginBottom: 8,
-  },
-  uploadedFileName: {
-    fontSize: 14,
-    color: '#333',
-  },
-  pdfDataContainer: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  pdfDataTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
-    marginBottom: 8,
-  },
-  pdfDataText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: '700',
   },
 });
 
-// ======================
-// Exports
-// ======================
 export { ChooseCompanyScreen, InsuranceNumberScreen, UploadPolicyScreen };
