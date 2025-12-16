@@ -21,7 +21,7 @@ const { width } = Dimensions.get('window');
 
 // Configuration - Update this to match your server URL
 const API_CONFIG = {
-  BASE_URL: 'http://10.0.2.2:5000', // Change to your server URL
+  BASE_URL: 'https://policysaath.com/api', // Change to your server URL
   ENDPOINTS: {
     FETCH_POLICIES: (customerId: string) => `/v1/customer/customer-fetch-policy/${customerId}`,
   }
@@ -100,7 +100,8 @@ const MyPolicyScreen = () => {
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
-        setUserId(user.id);
+        const resolvedId = user.id || user._id;
+        setUserId(resolvedId);
       } else {
         // If no user data, navigate to login
         navigation.reset({

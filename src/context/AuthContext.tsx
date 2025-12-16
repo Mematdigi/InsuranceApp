@@ -13,8 +13,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // ✅ Use your actual customerId from database
-  const [customerId, setCustomerId] = useState<string | null>('68ada8d22071b4b868cd7951');
+  // Start with no customer selected; will be set after login
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   const handleSetCustomerId = async (id: string) => {
     // ✅ Only store if id is valid (not null/undefined)
