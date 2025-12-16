@@ -1,16 +1,15 @@
 // App.tsx
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-
 import LoginPage from './src/screens/LatestLoginScreen';
 import DashboardPage from './src/screens/DashboardScreen';
-import NewDashboardScreen from './src/screens/CustomerDashboardScreen';  
+import NewDashboardScreen from './src/screens/CustomerDashboardScreen';
 import SelectInsurancePage from './src/screens/SelectInsuranceScreen';
 //import AddPolicyPage from './src/screens/AddPolicyScreen';
-import { 
+import {
   ChooseCompanyScreen,
   InsuranceNumberScreen,
   //InsuranceNumberWithDataScreen,
@@ -23,55 +22,103 @@ import DuePaymentsScreen from './src/screens/DuePaymentScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import FAQScreen from './src/screens/FAQScreen';
 import { AuthProvider } from './src/context/AuthContext';
+import Onboarding1 from './src/screens/Onboarding1';
+import Start1 from './src/screens/Start1';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type RootStackParamList = {
   Login: undefined;
   Dashboard: { username: string };
-  CustomerDashboard:{username: string};
+  CustomerDashboard: { username: string };
   SelectInsurance: undefined;
   AddPolicy: undefined;
   ChooseCompany: undefined;
   AddPolicyStep2: { company: string };
   //AddPolicyStep3: { company: string; insuranceNumber: string };
- // AddPolicyStep4: { company: string; insuranceNumber: string };
+  // AddPolicyStep4: { company: string; insuranceNumber: string };
   UploadPolicy: { company?: string; insuranceNumber?: string };
-  FillManually:undefined;
-  MyPolicy : undefined;
-  PolicyDetails:{
-    customerId:string;
-    policyId:string;
-    policyNumber:string;
+  FillManually: undefined;
+  MyPolicy: undefined;
+  PolicyDetails: {
+    customerId: string;
+    policyId: string;
+    policyNumber: string;
   };
-  DuePayment:undefined;
-  Profile:undefined;
-  FAQ:undefined;
+  DuePayment: undefined;
+  Profile: undefined;
+  FAQ: undefined;
+  Onboarding1: undefined;
+  Start1: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkFirstLaunch = async () => {
+      const alreadyLaunched = await AsyncStorage.getItem('alreadyLaunched');
+      if (alreadyLaunched) {
+        setIsFirstLaunch(false);
+      } else {
+        setIsFirstLaunch(true);
+        await AsyncStorage.setItem('alreadyLaunched', 'true');
+      }
+    };
+    checkFirstLaunch();
+  }, []);
+
+  if (isFirstLaunch === null) {
+    return null; // Optionally, show a loading screen while checking the AsyncStorage
+  }
+
   return (
     <AuthProvider>
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginPage} options={{ title: 'Login' }} />
-        <Stack.Screen name="Dashboard" component={DashboardPage} options={{ title: 'Dashboard' }} />
-        <Stack.Screen name="CustomerDashboard" component={NewDashboardScreen} options={{ title: 'Customer Dashboard' }} />
-        <Stack.Screen name="SelectInsurance" component={SelectInsurancePage} options={{ title: 'Select Insurance' }} />
-        
-        {/* Add Policy Flow Screens */}
-        <Stack.Screen name="ChooseCompany" component={ChooseCompanyScreen} />
-        <Stack.Screen name="AddPolicyStep2" component={InsuranceNumberScreen} />
-        {/* <Stack.Screen name="AddPolicyStep3" component={InsuranceNumberWithDataScreen} /> */}
-        <Stack.Screen name="UploadPolicy" component={UploadPolicyScreen} />
-        <Stack.Screen name ="FillManually" component={FillManuallyScreen}/>
-        <Stack.Screen name ="MyPolicy" component={MyPolicyScreen}/>
-        <Stack.Screen name="PolicyDetails" component={PolicyOverviewScreen}/>
-        <Stack.Screen name="DuePayment" component={DuePaymentsScreen}/>
-        <Stack.Screen name="Profile" component={ProfileScreen}/>
-        <Stack.Screen name="FAQ" component={FAQScreen}/>
-      </Stack.Navigator>
-    </NavigationContainer>
+      <NavigationContainer>
+        <Stack.Navigator
+          // initialRouteName={isFirstLaunch ? 'Onboarding1' : 'Login'}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Onboarding1" component={Onboarding1} />
+          <Stack.Screen name="Start1" component={Start1} />
+          <Stack.Screen
+            name="Login"
+            component={LoginPage}
+            options={{ title: 'Login' }}
+          />
+          <Stack.Screen
+            name="Dashboard"
+            component={DashboardPage}
+            options={{ title: 'Dashboard' }}
+          />
+          <Stack.Screen
+            name="CustomerDashboard"
+            component={NewDashboardScreen}
+            options={{ title: 'Customer Dashboard' }}
+          />
+          <Stack.Screen
+            name="SelectInsurance"
+            component={SelectInsurancePage}
+            options={{ title: 'Select Insurance' }}
+          />
+
+          {/* Add Policy Flow Screens */}
+          <Stack.Screen name="ChooseCompany" component={ChooseCompanyScreen} />
+          <Stack.Screen
+            name="AddPolicyStep2"
+            component={InsuranceNumberScreen}
+          />
+          {/* <Stack.Screen name="AddPolicyStep3" component={InsuranceNumberWithDataScreen} /> */}
+          <Stack.Screen name="UploadPolicy" component={UploadPolicyScreen} />
+          <Stack.Screen name="FillManually" component={FillManuallyScreen} />
+          <Stack.Screen name="MyPolicy" component={MyPolicyScreen} />
+          <Stack.Screen name="PolicyDetails" component={PolicyOverviewScreen} />
+          <Stack.Screen name="DuePayment" component={DuePaymentsScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="FAQ" component={FAQScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </AuthProvider>
   );
 };
