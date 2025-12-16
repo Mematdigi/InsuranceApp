@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuration - matches your backend
 const API_CONFIG = {
-  BASE_URL: 'http://10.0.2.2:5000', // Android emulator localhost
+  BASE_URL: 'https://policysaath.com/api', // Android emulator localhost
   ENDPOINTS: {
     SAVE_POLICY: '/v1/customer/save-pdf-reader', // Correct endpoint from your backend
   }
@@ -29,10 +29,14 @@ interface DropdownOption {
 }
 
 interface UserData {
-  id: string;
+  id: string;           // normalized id we rely on
+  _id?: string;         // in case backend still sends this
   username?: string;
   name?: string;
   email?: string;
+  contact?: string;
+  mobile?: string;
+  phone?: string;
 }
 
 const FillManuallyScreen = () => {
@@ -112,14 +116,19 @@ const FillManuallyScreen = () => {
     try {
       const userDataString = await AsyncStorage.getItem('user');
       if (userDataString) {
-        const user = JSON.parse(userDataString);
-        setUserData(user);
+        const rawUser = JSON.parse(userDataString);
+        // Ensure we always have a normalized id
+        const normalizedUser: UserData = {
+          ...rawUser,
+          id: rawUser.id || rawUser._id,
+        };
+        setUserData(normalizedUser);
         
         // Pre-fill policy holder name if available
-        if (user.name || user.username) {
+        if (normalizedUser.name || normalizedUser.username) {
           setFormData(prev => ({
             ...prev,
-            policyHolderName: user.name || user.username
+            policyHolderName: normalizedUser.name || normalizedUser.username || '',
           }));
         }
       } else {
