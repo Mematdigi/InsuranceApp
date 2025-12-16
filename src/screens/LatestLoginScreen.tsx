@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,34 +11,34 @@ import {
   StatusBar,
   Animated,
   Easing,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 
-const { width, height } = Dimensions.get("window");
-const API_BASE = "https://policysaath.com/api/api";
+const { width, height } = Dimensions.get('window');
+const API_BASE = 'https://policysaath.com/api/api';
 
 const LoginScreen = () => {
-  const [role, setRole] = useState<"Customer" | "Agent">("Customer");
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<'Customer' | 'Agent'>('Customer');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpLogin, setIsOtpLogin] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState(Array(6).fill(""));
+  const [otp, setOtp] = useState(Array(6).fill(''));
   const [timer, setTimer] = useState(120);
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
-  
+
   // Register form state
-  const [registerName, setRegisterName] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerMobile, setRegisterMobile] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [registerName, setRegisterName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerMobile, setRegisterMobile] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const otpRefs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation<any>();
@@ -49,23 +49,23 @@ const LoginScreen = () => {
   const titleTranslateY = useRef(new Animated.Value(-60)).current;
   const titleScale = useRef(new Animated.Value(0.5)).current;
   const titleRotateX = useRef(new Animated.Value(90)).current;
-  
+
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const subtitleTranslateY = useRef(new Animated.Value(40)).current;
   const subtitleScale = useRef(new Animated.Value(0.8)).current;
-  
+
   const formOpacity = useRef(new Animated.Value(0)).current;
   const formTranslateY = useRef(new Animated.Value(30)).current;
-  
+
   // Background animation values
   const circle1Opacity = useRef(new Animated.Value(0.7)).current;
   const circle1Scale = useRef(new Animated.Value(1)).current;
   const circle1Rotate = useRef(new Animated.Value(0)).current;
-  
+
   const circle2Opacity = useRef(new Animated.Value(0.7)).current;
   const circle2Scale = useRef(new Animated.Value(1)).current;
   const circle2Rotate = useRef(new Animated.Value(0)).current;
-  
+
   const circle3Opacity = useRef(new Animated.Value(0.7)).current;
   const circle3Scale = useRef(new Animated.Value(1)).current;
   const circle3Rotate = useRef(new Animated.Value(0)).current;
@@ -187,7 +187,7 @@ const LoginScreen = () => {
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: false,
           }),
-        ])
+        ]),
       ).start();
 
       Animated.loop(
@@ -196,7 +196,7 @@ const LoginScreen = () => {
           duration: 8000,
           easing: Easing.linear,
           useNativeDriver: false,
-        })
+        }),
       ).start();
 
       // Circle 2 animation (delayed)
@@ -215,7 +215,7 @@ const LoginScreen = () => {
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: false,
             }),
-          ])
+          ]),
         ).start();
 
         Animated.loop(
@@ -224,7 +224,7 @@ const LoginScreen = () => {
             duration: 12000,
             easing: Easing.linear,
             useNativeDriver: false,
-          })
+          }),
         ).start();
       }, 2000);
 
@@ -244,7 +244,7 @@ const LoginScreen = () => {
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: false,
             }),
-          ])
+          ]),
         ).start();
 
         Animated.loop(
@@ -253,7 +253,7 @@ const LoginScreen = () => {
             duration: 10000,
             easing: Easing.linear,
             useNativeDriver: false,
-          })
+          }),
         ).start();
       }, 4000);
     };
@@ -262,41 +262,56 @@ const LoginScreen = () => {
   }, []);
 
   // ADD this function after existing useEffect:
-const handleScroll = Animated.event(
-  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-  { 
-    useNativeDriver: false,
-    listener: (event: any) => {
-      const offsetY = event.nativeEvent.contentOffset.y;
-      const threshold = 50;
-      const maxCollapse = 150;
-      
-      const progress = Math.min(Math.max(offsetY - threshold, 0) / maxCollapse, 1);
-      
-      const minHeight = height * 0.1;
-      const maxHeight = height * 0.4;
-      const newHeight = maxHeight - (maxHeight - minHeight) * progress;
-      
-      headerHeight.setValue(newHeight);
-      headerOpacity.setValue(1 - progress * 0.8);
-      headerScale.setValue(1 - progress * 0.3);
-    }
-  }
-);
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: (event: any) => {
+        const offsetY = event.nativeEvent.contentOffset.y;
+        const threshold = 50;
+        const maxCollapse = 150;
 
-const resetHeader = () => {
-  Animated.parallel([
-    Animated.timing(headerHeight, { toValue: height * 0.4, duration: 300, useNativeDriver: false }),
-    Animated.timing(headerOpacity, { toValue: 1, duration: 300, useNativeDriver: false }),
-    Animated.timing(headerScale, { toValue: 1, duration: 300, useNativeDriver: false }),
-  ]).start();
-};
+        const progress = Math.min(
+          Math.max(offsetY - threshold, 0) / maxCollapse,
+          1,
+        );
+
+        const minHeight = height * 0.1;
+        const maxHeight = height * 0.4;
+        const newHeight = maxHeight - (maxHeight - minHeight) * progress;
+
+        headerHeight.setValue(newHeight);
+        headerOpacity.setValue(1 - progress * 0.8);
+        headerScale.setValue(1 - progress * 0.3);
+      },
+    },
+  );
+
+  const resetHeader = () => {
+    Animated.parallel([
+      Animated.timing(headerHeight, {
+        toValue: height * 0.4,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(headerScale, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
 
   // OTP Countdown
   useEffect(() => {
     let countdown: NodeJS.Timeout;
     if (otpSent && timer > 0) {
-      countdown = setInterval(() => setTimer((prev) => prev - 1), 1000);
+      countdown = setInterval(() => setTimer(prev => prev - 1), 1000);
     }
     return () => clearInterval(countdown);
   }, [otpSent, timer]);
@@ -314,7 +329,7 @@ const resetHeader = () => {
 
   const handleLogin = async () => {
     if (!identifier || (!isOtpLogin && !password)) {
-      return Alert.alert("Error", "Please fill all fields");
+      return Alert.alert('Error', 'Please fill all fields');
     }
 
     try {
@@ -322,41 +337,48 @@ const resetHeader = () => {
 
       if (isOtpLogin && !otpSent) {
         const res = await fetch(`${API_BASE}/otp-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contactNumber: identifier, role }),
         });
         const data = await res.json();
         if (!res.ok) {
-          if (data.msg?.includes('not found') || data.msg?.includes('does not exist')) {
+          if (
+            data.msg?.includes('not found') ||
+            data.msg?.includes('does not exist')
+          ) {
             Alert.alert(
-              "Account Not Found", 
-              "This email/phone is not registered. Would you like to create an account?",
+              'Account Not Found',
+              'This email/phone is not registered. Would you like to create an account?',
               [
-                { text: "Cancel", style: "cancel" },
-                { text: "Register", onPress: () => setShowRegister(true) }
-              ]
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Register', onPress: () => setShowRegister(true) },
+              ],
             );
             return;
           }
-          throw new Error(data.msg || "Failed to send OTP");
+          throw new Error(data.msg || 'Failed to send OTP');
         }
 
         setOtpSent(true);
         setTimer(120);
-        Alert.alert("Success", "OTP sent successfully!");
+        Alert.alert('Success', 'OTP sent successfully!');
       } else if (isOtpLogin && otpSent) {
-        const enteredOtp = otp.join("");
+        const enteredOtp = otp.join('');
         if (enteredOtp.length < 6) {
-          return Alert.alert("Error", "Enter valid OTP");
+          return Alert.alert('Error', 'Enter valid OTP');
         }
         const res = await fetch(`${API_BASE}/otp-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contactNumber: identifier, role, otp: enteredOtp }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contactNumber: identifier,
+            role,
+            otp: enteredOtp,
+          }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.msg || "OTP verification failed");
+        if (!res.ok) throw new Error(data.msg || 'OTP verification failed');
 
         // ✅ Normalize user object so it always has an `id` field
         const normalizedUser = {
@@ -364,36 +386,40 @@ const resetHeader = () => {
           id: data.user.id || data.user._id,
         };
 
-        await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
-        Alert.alert("Success", "Login successful!");
+        await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
+        Alert.alert('Success', 'Login successful!');
         setCustomerId(normalizedUser.id);
 
-        
-        if (role === "Agent") {
-          navigation.replace("SelectInsurance");
+        if (role === 'Agent') {
+          navigation.replace('SelectInsurance');
         } else {
-          navigation.replace("CustomerDashboard", { username: data.user.username });
+          navigation.replace('CustomerDashboard', {
+            username: data.user.username,
+          });
         }
       } else {
         const res = await fetch(`${API_BASE}/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier, password, role }),
         });
         const data = await res.json();
         if (!res.ok) {
-          if (data.msg?.includes('not found') || data.msg?.includes('does not exist')) {
+          if (
+            data.msg?.includes('not found') ||
+            data.msg?.includes('does not exist')
+          ) {
             Alert.alert(
-              "Account Not Found", 
-              "This email is not registered. Would you like to create an account?",
+              'Account Not Found',
+              'This email is not registered. Would you like to create an account?',
               [
-                { text: "Cancel", style: "cancel" },
-                { text: "Register", onPress: () => setShowRegister(true) }
-              ]
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Register', onPress: () => setShowRegister(true) },
+              ],
             );
             return;
           }
-          throw new Error(data.msg || "Login failed");
+          throw new Error(data.msg || 'Login failed');
         }
 
         // ✅ Normalize user object so it always has an `id` field
@@ -402,40 +428,48 @@ const resetHeader = () => {
           id: data.user.id || data.user._id,
         };
 
-        await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
-        Alert.alert("Success", "Login successful!");
-        setCustomerId(normalizedUser.id); 
+        await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
+        Alert.alert('Success', 'Login successful!');
+        setCustomerId(normalizedUser.id);
 
-        if (role === "Agent") {
-          navigation.replace("SelectInsurance");
+        if (role === 'Agent') {
+          navigation.replace('SelectInsurance');
         } else {
-          navigation.replace("CustomerDashboard", { username: data.user.username });
+          navigation.replace('CustomerDashboard', {
+            username: data.user.username,
+          });
         }
       }
     } catch (err: any) {
       console.log(err);
-      Alert.alert("Error", err.message || "Something went wrong");
+      Alert.alert('Error', err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
   const handleRegister = async () => {
-    if (!registerName || !registerEmail || !registerMobile || !registerPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill all fields");
+    if (
+      !registerName ||
+      !registerEmail ||
+      !registerMobile ||
+      !registerPassword ||
+      !confirmPassword
+    ) {
+      Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
     if (registerPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: registerName,
           email: registerEmail,
@@ -444,24 +478,24 @@ const resetHeader = () => {
           role,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
-        Alert.alert("Success", "Account created successfully! Please login.");
+        Alert.alert('Success', 'Account created successfully! Please login.');
         setShowRegister(false);
         setIdentifier(registerEmail);
-        setRegisterName("");
-        setRegisterEmail("");
-        setRegisterMobile("");
-        setRegisterPassword("");
-        setConfirmPassword("");
+        setRegisterName('');
+        setRegisterEmail('');
+        setRegisterMobile('');
+        setRegisterPassword('');
+        setConfirmPassword('');
       } else {
-        Alert.alert("Error", data.message || "Registration failed");
+        Alert.alert('Error', data.message || 'Registration failed');
       }
     } catch (err: any) {
       console.log(err);
-      Alert.alert("Error", "Network error. Please try again.");
+      Alert.alert('Error', 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -470,150 +504,171 @@ const resetHeader = () => {
   const handleResendOtp = async () => {
     try {
       const res = await fetch(`${API_BASE}/otp-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contactNumber: identifier, role }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || "Failed to resend OTP");
+      if (!res.ok) throw new Error(data.msg || 'Failed to resend OTP');
       setOtpSent(true);
       setTimer(120);
-      Alert.alert("Success", "OTP resent successfully!");
+      Alert.alert('Success', 'OTP resent successfully!');
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong");
+      Alert.alert('Error', err.message || 'Something went wrong');
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar backgroundColor="#62D2CC" barStyle="light-content" />
-      
+
       {/* Top Turquoise Section with Enhanced Header */}
       <View style={styles.topSection}>
         {/* Animated Background Circles */}
-        <Animated.View style={[
-          styles.bgCircle1,
-          {
-            opacity: circle1Opacity,
-            transform: [
-              { scale: circle1Scale },
-              { rotate: circle1Rotate.interpolate({
-                inputRange: [0, 360],
-                outputRange: ['0deg', '360deg']
-              })}
-            ]
-          }
-        ]} />
-        
-        <Animated.View style={[
-          styles.bgCircle2,
-          {
-            opacity: circle2Opacity,
-            transform: [
-              { scale: circle2Scale },
-              { rotate: circle2Rotate.interpolate({
-                inputRange: [0, 360],
-                outputRange: ['0deg', '360deg']
-              })}
-            ]
-          }
-        ]} />
-        
-        <Animated.View style={[
-          styles.bgCircle3,
-          {
-            opacity: circle3Opacity,
-            transform: [
-              { scale: circle3Scale },
-              { rotate: circle3Rotate.interpolate({
-                inputRange: [0, 360],
-                outputRange: ['0deg', '360deg']
-              })}
-            ]
-          }
-        ]} />
-        
+        <Animated.View
+          style={[
+            styles.bgCircle1,
+            {
+              opacity: circle1Opacity,
+              transform: [
+                { scale: circle1Scale },
+                {
+                  rotate: circle1Rotate.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+
+        <Animated.View
+          style={[
+            styles.bgCircle2,
+            {
+              opacity: circle2Opacity,
+              transform: [
+                { scale: circle2Scale },
+                {
+                  rotate: circle2Rotate.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+
+        <Animated.View
+          style={[
+            styles.bgCircle3,
+            {
+              opacity: circle3Opacity,
+              transform: [
+                { scale: circle3Scale },
+                {
+                  rotate: circle3Rotate.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
 
         <View style={styles.headerContent}>
-          <Animated.Text style={[
-            styles.welcomeTitle,
-            {
-              opacity: titleOpacity,
-              transform: [
-                { translateY: titleTranslateY },
-                { scale: titleScale },
-                { perspective: 1000 },
-                { rotateX: titleRotateX.interpolate({
-                  inputRange: [0, 90],
-                  outputRange: ['0deg', '90deg']
-                })}
-              ]
-            }
-          ]}>
+          <Animated.Text
+            style={[
+              styles.welcomeTitle,
+              {
+                opacity: titleOpacity,
+                transform: [
+                  { translateY: titleTranslateY },
+                  { scale: titleScale },
+                  { perspective: 1000 },
+                  {
+                    rotateX: titleRotateX.interpolate({
+                      inputRange: [0, 90],
+                      outputRange: ['0deg', '90deg'],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             Welcome to PolicySaath
           </Animated.Text>
-          
-          <Animated.Text style={[
-            styles.welcomeSubtitle,
-            {
-              opacity: subtitleOpacity,
-              transform: [
-                { translateY: subtitleTranslateY },
-                { scale: subtitleScale }
-              ]
-            }
-          ]}>
+
+          <Animated.Text
+            style={[
+              styles.welcomeSubtitle,
+              {
+                opacity: subtitleOpacity,
+                transform: [
+                  { translateY: subtitleTranslateY },
+                  { scale: subtitleScale },
+                ],
+              },
+            ]}
+          >
             Login to Your Path to a Hassle-Free{'\n'}Experience!
           </Animated.Text>
         </View>
       </View>
 
       {/* Main White Container with Enhanced Form */}
-      <Animated.View style={[
-        styles.mainContainer,
-        {
-          opacity: formOpacity,
-          transform: [{ translateY: formTranslateY }]
-        }
-      ]}>
+      <Animated.View
+        style={[
+          styles.mainContainer,
+          {
+            opacity: formOpacity,
+            transform: [{ translateY: formTranslateY }],
+          },
+        ]}
+      >
         {/* Curved overlay to create the curve effect */}
-        <View style={styles.curveOverlay} />
-        
-        <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-         
+        {/* <View style={styles.curveOverlay} /> */}
+
+        <View
+          style={[styles.scrollView, styles.scrollContent]}
+          // contentContainerStyle={styles.scrollContent}
         >
           {/* Tab Selection */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
               style={[
-                styles.tab, 
+                styles.tab,
                 styles.leftTab,
-                role === "Customer" && styles.activeTab
+                role === 'Customer' && styles.activeTab,
               ]}
-              onPress={() => setRole("Customer")}
+              onPress={() => setRole('Customer')}
             >
-              <Text style={[
-                styles.tabText, 
-                role === "Customer" && styles.activeTabText
-              ]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  role === 'Customer' && styles.activeTabText,
+                ]}
+              >
                 Customer Login
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
-                styles.tab, 
+                styles.tab,
                 styles.rightTab,
-                role === "Agent" && styles.activeTab
+                role === 'Agent' && styles.activeTab,
               ]}
-              onPress={() => setRole("Agent")}
+              onPress={() => setRole('Agent')}
             >
-              <Text style={[
-                styles.tabText, 
-                role === "Agent" && styles.activeTabText
-              ]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  role === 'Agent' && styles.activeTabText,
+                ]}
+              >
                 Agent Login
               </Text>
             </TouchableOpacity>
@@ -629,19 +684,22 @@ const resetHeader = () => {
                     <TextInput
                       style={[
                         styles.input,
-                        emailFocused && styles.inputFocused]}
+                        emailFocused && styles.inputFocused,
+                      ]}
                       value={identifier}
                       onChangeText={setIdentifier}
-                      onFocus={()=>setEmailFocused(true)}
-                      onBlur={()=>setEmailFocused(false)}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoComplete="email"
                     />
-                    <Text style={[
-                      styles.label,
-                      (emailFocused || identifier) && styles.labelFocused  // ✅ ADD dynamic styling
-                    ]}>
+                    <Text
+                      style={[
+                        styles.label,
+                        (emailFocused || identifier) && styles.labelFocused, // ✅ ADD dynamic styling
+                      ]}
+                    >
                       Email
                     </Text>
                   </View>
@@ -654,28 +712,33 @@ const resetHeader = () => {
                         <TextInput
                           style={[
                             styles.input,
-                          passwordFocused && styles.inputFocused
-                        ]}
+                            passwordFocused && styles.inputFocused,
+                          ]}
                           value={password}
                           onChangeText={setPassword}
-                          onFocus={() => setPasswordFocused(true)}   // ✅ ADD focus handlers
-                          onBlur={() => setPasswordFocused(false)} 
+                          onFocus={() => setPasswordFocused(true)} // ✅ ADD focus handlers
+                          onBlur={() => setPasswordFocused(false)}
                           secureTextEntry={!showPassword}
                           autoComplete="password"
                           // placeholder="Password"
                           placeholderTextColor="#00728D"
                         />
-                        <Text style={[
-                          styles.label,
-                          (passwordFocused || password) && styles.labelFocused  // ✅ ADD dynamic styling
-                        ]}>
+                        <Text
+                          style={[
+                            styles.label,
+                            (passwordFocused || password) &&
+                              styles.labelFocused, // ✅ ADD dynamic styling
+                          ]}
+                        >
                           Password
                         </Text>
                       </View>
 
                       {/* Forgot Password */}
                       <TouchableOpacity style={styles.forgotPasswordContainer}>
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                        <Text style={styles.forgotPasswordText}>
+                          Forgot Password?
+                        </Text>
                       </TouchableOpacity>
                     </>
                   )}
@@ -690,7 +753,9 @@ const resetHeader = () => {
                     <Text style={styles.otpDescription}>
                       Enter the 6-digit code sent to{'\n'}
                       <Text style={styles.identifierText}>
-                        {identifier.includes("@") ? "📧 " + identifier : "📱 " + identifier}
+                        {identifier.includes('@')
+                          ? '📧 ' + identifier
+                          : '📱 ' + identifier}
                       </Text>
                     </Text>
                   </View>
@@ -701,13 +766,15 @@ const resetHeader = () => {
                         key={idx}
                         style={[
                           styles.otpInput,
-                          digit && styles.otpInputFilled
+                          digit && styles.otpInputFilled,
                         ]}
                         maxLength={1}
                         keyboardType="number-pad"
-                        ref={(el) => { otpRefs.current[idx] = el; }}
+                        ref={el => {
+                          otpRefs.current[idx] = el;
+                        }}
                         value={digit}
-                        onChangeText={(val) => handleOtpChange(val, idx)}
+                        onChangeText={val => handleOtpChange(val, idx)}
                         textAlign="center"
                       />
                     ))}
@@ -715,55 +782,72 @@ const resetHeader = () => {
 
                   <View style={styles.timerContainer}>
                     <Text style={styles.timerText}>
-                      ⏱️ Code expires in {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}
+                      ⏱️ Code expires in {Math.floor(timer / 60)}:
+                      {String(timer % 60).padStart(2, '0')}
                     </Text>
                   </View>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={handleResendOtp}
                     style={styles.resendButton}
                     disabled={timer > 0}
                   >
-                    <Text style={[styles.resendText, timer > 0 && styles.disabledText]}>
+                    <Text
+                      style={[
+                        styles.resendText,
+                        timer > 0 && styles.disabledText,
+                      ]}
+                    >
                       🔄 Resend OTP
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => {
                       setOtpSent(false);
-                      setOtp(Array(6).fill(""));
+                      setOtp(Array(6).fill(''));
                       setTimer(120);
                     }}
                     style={styles.backButton}
                   >
-                    <Text style={styles.backButtonText}>← Change Email/Phone</Text>
+                    <Text style={styles.backButtonText}>
+                      ← Change Email/Phone
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
 
               {/* Login Button */}
-              <TouchableOpacity 
-                style={[styles.loginButton, loading && styles.disabledButton]} 
-                onPress={handleLogin} 
+              <TouchableOpacity
+                style={[styles.loginButton, loading && styles.disabledButton]}
+                onPress={handleLogin}
                 disabled={loading}
               >
                 <Text style={styles.loginButtonText}>
-                  {loading ? 
-                    (otpSent ? "Verifying..." : (isOtpLogin ? "Sending OTP..." : "Logging in...")) : 
-                    (otpSent ? "Verify & Continue" : (isOtpLogin ? "Send OTP" : "Login"))
-                  }
+                  {loading
+                    ? otpSent
+                      ? 'Verifying...'
+                      : isOtpLogin
+                      ? 'Sending OTP...'
+                      : 'Logging in...'
+                    : otpSent
+                    ? 'Verify & Continue'
+                    : isOtpLogin
+                    ? 'Send OTP'
+                    : 'Login'}
                 </Text>
               </TouchableOpacity>
 
               {/* Login via OTP Link - moved below login button */}
               {!otpSent && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.otpLinkSimple}
                   onPress={() => setIsOtpLogin(!isOtpLogin)}
                 >
                   <Text style={styles.otpLinkSimpleText}>
-                    {isOtpLogin ? "← Back to Password Login" : "Login via OTP →"}
+                    {isOtpLogin
+                      ? '← Back to Password Login'
+                      : 'Login via OTP →'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -868,7 +952,7 @@ const resetHeader = () => {
                 disabled={loading}
               >
                 <Text style={styles.loginButtonText}>
-                  {loading ? "Creating Account..." : "Register"}
+                  {loading ? 'Creating Account...' : 'Register'}
                 </Text>
               </TouchableOpacity>
 
@@ -880,9 +964,9 @@ const resetHeader = () => {
               </TouchableOpacity>
             </>
           )}
-        </ScrollView>
+        </View>
       </Animated.View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -986,7 +1070,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 40,
     paddingBottom: 40,
-    minHeight:height*0.8,
+    minHeight: height * 0.8,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -1038,29 +1122,29 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   label: {
-    position:'absolute',
-    left:16,
-    top:-12,
-    zIndex:1,
+    position: 'absolute',
+    left: 16,
+    top: -12,
+    zIndex: 1,
     fontSize: 14,
     fontWeight: '500',
     color: '#00728D',
-    paddingHorizontal:8,
-    backgroundColor:'white',
-    paddingVertical:2,
+    paddingHorizontal: 8,
+    backgroundColor: 'white',
+    paddingVertical: 2,
   },
 
-  labelFocused:{
+  labelFocused: {
     color: '#62D2CC',
   },
   inputFocused: {
-  borderColor: '#62D2CC',
-  shadowColor: '#62D2CC',
-  shadowOffset: { width: 0, height: 0 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
-},
+    borderColor: '#62D2CC',
+    shadowColor: '#62D2CC',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
 
   input: {
     borderWidth: 2,
@@ -1068,12 +1152,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    paddingLeft:20,
+    paddingLeft: 20,
     fontSize: 16,
     color: '#111827',
     backgroundColor: '#FFFFFf',
     fontWeight: '500',
-    
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
