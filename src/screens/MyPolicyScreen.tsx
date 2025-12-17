@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   Modal,
@@ -16,6 +15,7 @@ import {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -551,7 +551,7 @@ const MyPolicyScreen = () => {
   if (error && !policies.length && !loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+        <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Text style={styles.backArrow}>←</Text>
@@ -571,7 +571,7 @@ const MyPolicyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -615,14 +615,14 @@ const MyPolicyScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#4ECDC4']}
-              tintColor="#4ECDC4"
+              colors={['#1F9393']}
+              tintColor="#1F9393"
             />
           }
         >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4ECDC4" />
+              <ActivityIndicator size="large" color="#1F9393" />
               <Text style={styles.loadingText}>Loading policies...</Text>
             </View>
           ) : filteredPolicies.length > 0 ? (
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
@@ -702,15 +702,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   backButton: {
-    padding: 8,
+    // padding: 8,
   },
   backArrow: {
     color: 'white',
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   filterButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   sortButton: {
     flexDirection: 'row',
@@ -782,12 +782,12 @@ const styles = StyleSheet.create({
   },
   sortText: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginRight: 4,
   },
   sortArrow: {
     fontSize: 10,
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   policyList: {
     flex: 1,
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
   noPoliciesText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 8,
   },
   noPoliciesSubtext: {
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   addFirstPolicyButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 25,
@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
   },
   selectedPolicyCard: {
     borderWidth: 2,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -858,12 +858,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E6F7F5',
   },
   dueBadge: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   dueStatusText: {
     color: 'white',
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginRight: 8,
   },
   companyLogo: {
@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
   policyType: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 4,
   },
   productName: {
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
   premiumAmount: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   expirySection: {
     alignItems: 'flex-end',
@@ -925,10 +925,10 @@ const styles = StyleSheet.create({
   expiryDate: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   addNewButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -964,13 +964,13 @@ const styles = StyleSheet.create({
   },
   modalCloseIcon: {
     fontSize: 24,
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: 'bold',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   filterContent: {
     padding: 20,
@@ -999,8 +999,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   activeFilterChip: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
+    borderColor: '#1F9393',
   },
   filterChipText: {
     fontSize: 14,
@@ -1014,7 +1014,7 @@ const styles = StyleSheet.create({
   },
   rangeText: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: '600',
     marginBottom: 12,
     textAlign: 'center',
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
   },
   rangeTrack: {
     height: 4,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     borderRadius: 2,
   },
   rangeThumb: {
@@ -1037,7 +1037,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'white',
     borderWidth: 3,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
   },
   rangeThumbRight: {
     left: width - 100,
@@ -1054,10 +1054,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
   },
   clearButtonText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1066,7 +1066,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
   },
   applyButtonText: {
     color: 'white',
@@ -1102,7 +1102,7 @@ const styles = StyleSheet.create({
     color: '#2D3748',
   },
   activeSortText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: '600',
   },
 });

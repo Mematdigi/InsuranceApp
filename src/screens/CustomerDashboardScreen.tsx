@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Alert,
   Dimensions,
@@ -15,8 +14,10 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -24,8 +25,9 @@ const { width } = Dimensions.get('window');
 const API_CONFIG = {
   BASE_URL: 'https://policysaath.com/api', // Emulator IP - Change to your device IP for real device (192.168.1.14:3000)
   ENDPOINTS: {
-    FETCH_POLICIES: (customerId: string) => `/v1/customer/customer-fetch-policy/${customerId}`,
-  }
+    FETCH_POLICIES: (customerId: string) =>
+      `/v1/customer/customer-fetch-policy/${customerId}`,
+  },
 };
 
 interface PolicyAction {
@@ -76,10 +78,10 @@ const NewDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Animation values for cards
   const [cardAnimations, setCardAnimations] = useState<Animated.Value[]>([]);
-  
+
   useEffect(() => {
     loadUserData();
   }, []);
@@ -95,7 +97,7 @@ const NewDashboardScreen = () => {
     if (policyCards.length > 0) {
       const animations = policyCards.map(() => new Animated.Value(0));
       setCardAnimations(animations);
-      
+
       // Stagger animation for each card
       const staggerDelay = 200;
       animations.forEach((animation, index) => {
@@ -144,7 +146,7 @@ const NewDashboardScreen = () => {
 
       console.log('Fetching policies for user ID:', userId);
       const apiUrl = `${API_CONFIG.BASE_URL}/v1/customer/customer-fetch-policy/${userId}`;
-      
+
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -160,7 +162,7 @@ const NewDashboardScreen = () => {
           setPolicyCards([]);
           return;
         }
-        
+
         // Try to get error message from response
         let errorMessage = `HTTP ${response.status}`;
         try {
@@ -176,7 +178,7 @@ const NewDashboardScreen = () => {
         } catch (parseError) {
           console.error('Error parsing error response:', parseError);
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -198,10 +200,11 @@ const NewDashboardScreen = () => {
         setPolicyCards([]);
         console.log('No policies found in response');
       }
-
     } catch (error) {
       console.error('Error fetching policies:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch policies');
+      setError(
+        error instanceof Error ? error.message : 'Failed to fetch policies',
+      );
       setPolicyCards([]);
     } finally {
       setLoading(false);
@@ -215,52 +218,55 @@ const NewDashboardScreen = () => {
   };
 
   // Conditional policy actions based on whether user has policies
-  const policyActions: PolicyAction[] = policyCards.length === 0 ? [
-    {
-      id: '1',
-      title: 'Add Policy',
-      icon: '➕',
-      action: () => navigation.navigate('ChooseCompany')
-    },
-    {
-      id: '3',
-      title: 'View Policy',
-      icon: '📄',
-      action: () => navigation.navigate('MyPolicy')
-    },
-    {
-      id: '4',
-      title: 'Renew Policy',
-      icon: '🔄',
-      action: () => navigation.navigate('DuePayment')
-    }
-  ] : [
-    // Hide "Add Policy" when user has policies
-    {
-      id: '1',
-      title: 'Add Policy',
-      icon: '➕',
-      action: () => navigation.navigate('ChooseCompany')
-    },
-    // {
-    //   id: '2',
-    //   title: 'Notifications',
-    //   icon: '🔔',
-    //   action: () => navigation.navigate('Profile')
-    // },
-    {
-      id: '3',
-      title: 'View Policy',
-      icon: '📄',
-      action: () => navigation.navigate('MyPolicy')
-    },
-    {
-      id: '4',
-      title: 'Renew Policy',
-      icon: '🔄',
-      action: () => navigation.navigate('DuePayment')
-    }
-  ];
+  const policyActions: PolicyAction[] =
+    policyCards.length === 0
+      ? [
+          {
+            id: '1',
+            title: 'Add Policy',
+            icon: 'add',
+            action: () => navigation.navigate('ChooseCompany'),
+          },
+          {
+            id: '3',
+            title: 'View Policy',
+            icon: 'document',
+            action: () => navigation.navigate('MyPolicy'),
+          },
+          {
+            id: '4',
+            title: 'Renew Policy',
+            icon: 'refresh',
+            action: () => navigation.navigate('DuePayment'),
+          },
+        ]
+      : [
+          // Hide "Add Policy" when user has policies
+          {
+            id: '1',
+            title: 'Add Policy',
+            icon: 'add',
+            action: () => navigation.navigate('ChooseCompany'),
+          },
+          // {
+          //   id: '2',
+          //   title: 'Notifications',
+          //   icon: '🔔',
+          //   action: () => navigation.navigate('Profile')
+          // },
+          {
+            id: '3',
+            title: 'View Policy',
+            icon: 'document',
+            action: () => navigation.navigate('MyPolicy'),
+          },
+          {
+            id: '4',
+            title: 'Renew Policy',
+            icon: 'refresh',
+            action: () => navigation.navigate('DuePayment'),
+          },
+        ];
 
   // const importantUpdates: UpdateNotification[] = [
   //   {
@@ -268,7 +274,7 @@ const NewDashboardScreen = () => {
   //     title: 'Payment Alerts',
   //     subtitle: 'Payment overdue reminders',
   //     icon: '💳',
-  //     color: '#4ECDC4',
+  //     color: '#1F9393',
   //     action: () => navigation.navigate('DuePayment')
   //   },
   //   {
@@ -294,40 +300,36 @@ const NewDashboardScreen = () => {
   //     id: '1',
   //     title: "FAQ's",
   //     icon: '❓',
-  //     color: '#4ECDC4',
+  //     color: '#1F9393',
   //     action: () => navigation.navigate('FAQ')
   //   }
   // ];
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('user');
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            } catch (error) {
-              console.error('Error logging out:', error);
-            }
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        onPress: async () => {
+          try {
+            await AsyncStorage.removeItem('user');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (error) {
+            console.error('Error logging out:', error);
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   const handlePolicyCardPress = (policy: PolicyCard) => {
     navigation.navigate('PolicyDetails', {
       customerId: policy.customerId,
       policyId: policy._id,
-      policyNumber: policy.policyNumber
+      policyNumber: policy.policyNumber,
     });
   };
 
@@ -344,11 +346,13 @@ const NewDashboardScreen = () => {
 
   const formatPremium = (amount: string | number) => {
     if (!amount) return '0';
-    const numericAmount = typeof amount === 'string' ? 
-      parseInt(amount.replace(/[^0-9]/g, '')) : amount;
-    
+    const numericAmount =
+      typeof amount === 'string'
+        ? parseInt(amount.replace(/[^0-9]/g, ''))
+        : amount;
+
     if (isNaN(numericAmount)) return '0';
-    
+
     if (numericAmount >= 100000) {
       return `${(numericAmount / 100000).toFixed(1)}L`;
     }
@@ -375,10 +379,13 @@ const NewDashboardScreen = () => {
   if (error && !policyCards.length && !loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+        <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>⚠️ {error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchPolicies()}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => fetchPolicies()}
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -388,8 +395,8 @@ const NewDashboardScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
+      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
+
       {/* Modern Curved Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
@@ -406,46 +413,52 @@ const NewDashboardScreen = () => {
 
           <View style={styles.greetingSection}>
             <Text style={styles.greetingText}>Welcome Back</Text>
-            <Text style={styles.usernameText}>{username.charAt(0).toUpperCase()+ username.slice(1).toLowerCase()}</Text>
+            <Text style={styles.usernameText}>
+              {username.charAt(0).toUpperCase() +
+                username.slice(1).toLowerCase()}
+            </Text>
           </View>
-          
+
           <TouchableOpacity style={styles.notificationButton}>
             <View style={styles.notificationIcon}>
-              <Text style={styles.bellIcon}>🔔</Text>
+              {/* <Text style={styles.bellIcon}>🔔</Text> */}
+              <FontAwesome name="bell" size={24} color={'#ffffff'} />
               <View style={styles.notificationDot} />
             </View>
           </TouchableOpacity>
         </View>
-        
+
         {/* Decorative curved elements */}
         <View style={[styles.headerCircle, styles.headerCircle1]} />
         <View style={[styles.headerCircle, styles.headerCircle2]} />
         <View style={[styles.headerCircle, styles.headerCircle3]} />
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#4ECDC4']}
-            tintColor="#4ECDC4"
+            colors={['#1F9393']}
+            tintColor="#1F9393"
           />
         }
       >
-        
         {/* First Time User - Add Policy Tab */}
         {policyCards.length === 0 && !loading && (
           <View style={styles.addPolicyTab}>
             <View style={styles.addPolicyContent}>
               <View style={styles.addPolicyTextSection}>
-                <Text style={styles.addPolicyTitle}>Can't See Your Policy?</Text>
-                <Text style={styles.addPolicySubtitle}>
-                  Don't Worry! You Will Be Able To See Your Policy Here In Just A Few Steps
+                <Text style={styles.addPolicyTitle}>
+                  Can't See Your Policy?
                 </Text>
-                <TouchableOpacity 
+                <Text style={styles.addPolicySubtitle}>
+                  Don't Worry! You Will Be Able To See Your Policy Here In Just
+                  A Few Steps
+                </Text>
+                <TouchableOpacity
                   style={styles.addPolicyButton}
                   onPress={() => navigation.navigate('ChooseCompany')}
                   activeOpacity={0.8}
@@ -474,22 +487,23 @@ const NewDashboardScreen = () => {
             </View>
           </View>
         )}
-        
+
         {/* Policy Actions Card - Only show if user has policies */}
         {policyCards.length > 0 && (
           <View style={styles.policyActionsCard}>
             <Text style={styles.cardTitle}>Policy Actions</Text>
-            
+
             <View style={styles.actionsGrid}>
-              {policyActions.map((action) => (
-                <TouchableOpacity 
-                  key={action.id} 
+              {policyActions.map(action => (
+                <TouchableOpacity
+                  key={action.id}
                   style={styles.actionItem}
                   onPress={action.action}
                   activeOpacity={0.7}
                 >
                   <View style={styles.actionIconContainer}>
-                    <Text style={styles.actionIcon}>{action.icon}</Text>
+                    {/* <Text style={styles.actionIcon}>{action.icon}</Text> */}
+                    <Ionicons name={action.icon} size={24} color={'#000000'} />
                   </View>
                   <Text style={styles.actionTitle}>{action.title}</Text>
                 </TouchableOpacity>
@@ -514,45 +528,57 @@ const NewDashboardScreen = () => {
                 <View style={[styles.insuranceCardVertical, styles.noDataCard]}>
                   <View style={styles.cardBody}>
                     <Text style={styles.noDataText}>Loading...</Text>
-                    <Text style={styles.noDataSubtext}>Fetching your policies</Text>
+                    <Text style={styles.noDataSubtext}>
+                      Fetching your policies
+                    </Text>
                   </View>
                 </View>
               ) : (
                 policyCards.map((card, index) => {
-                  const animatedStyle = cardAnimations[index] ? {
-                    opacity: cardAnimations[index],
-                    transform: [
-                      {
-                        translateY: cardAnimations[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [50, 0],
-                        }),
-                      },
-                      {
-                        scale: cardAnimations[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.8, 1],
-                        }),
-                      },
-                    ],
-                  } : {};
+                  const animatedStyle = cardAnimations[index]
+                    ? {
+                        opacity: cardAnimations[index],
+                        transform: [
+                          {
+                            translateY: cardAnimations[index].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [50, 0],
+                            }),
+                          },
+                          {
+                            scale: cardAnimations[index].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.8, 1],
+                            }),
+                          },
+                        ],
+                      }
+                    : {};
 
                   return (
-                    <Animated.View key={card._id || card.policyNumber} style={animatedStyle}>
-                      <TouchableOpacity 
+                    <Animated.View
+                      key={card._id || card.policyNumber}
+                      style={animatedStyle}
+                    >
+                      <TouchableOpacity
                         style={styles.insuranceCardVertical}
                         onPress={() => handlePolicyCardPress(card)}
                         activeOpacity={0.8}
                       >
                         <View style={styles.cardHeader}>
-                          <View style={[
-                            styles.cardStatus, 
-                            card.status === 'Overdue' && styles.overdueStatus
-                          ]}>
-                            <Text style={[
-                              styles.statusText,
-                              card.status === 'Overdue' && styles.overdueStatusText
-                            ]}>
+                          <View
+                            style={[
+                              styles.cardStatus,
+                              card.status === 'Overdue' && styles.overdueStatus,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.statusText,
+                                card.status === 'Overdue' &&
+                                  styles.overdueStatusText,
+                              ]}
+                            >
                               {card.status || 'Active'}
                             </Text>
                           </View>
@@ -563,18 +589,18 @@ const NewDashboardScreen = () => {
                             <View style={styles.logoCircle} />
                           </View>
                         </View>
-                        
+
                         <View style={styles.cardBody}>
                           <Text style={styles.insuranceType}>
                             {card.policyType || 'Insurance Policy'}
                           </Text>
                           <Text style={styles.insuranceSubType}>
-                            {card.productName && card.productName.length > 40 ? 
-                              card.productName.substring(0, 40) + '...' : 
-                              card.productName || 'Policy Coverage'}
+                            {card.productName && card.productName.length > 40
+                              ? card.productName.substring(0, 40) + '...'
+                              : card.productName || 'Policy Coverage'}
                           </Text>
                         </View>
-                        
+
                         <View style={styles.cardFooter}>
                           <View style={styles.premiumInfo}>
                             <Text style={styles.premiumLabel}>Premium :</Text>
@@ -606,7 +632,7 @@ const NewDashboardScreen = () => {
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* <View style={styles.updatesCard}>
           {importantUpdates.map((update, index) => (
             <TouchableOpacity 
@@ -633,11 +659,14 @@ const NewDashboardScreen = () => {
         <View style={styles.personalAlertsCard}>
           <View style={styles.alertHeader}>
             <View style={styles.alertIconContainer}>
-              <Text style={styles.alertIcon}>🔔</Text>
+              {/* <Text style={styles.alertIcon}>🔔</Text> */}
+              <FontAwesome name="bell" size={24} color={'#000000'} />
             </View>
             <View style={styles.alertInfo}>
               <Text style={styles.alertTitle}>Personal Alerts</Text>
-              <Text style={styles.alertSubtitle}>Upcoming Birthdays & Anniversaries</Text>
+              <Text style={styles.alertSubtitle}>
+                Upcoming Birthdays & Anniversaries
+              </Text>
             </View>
           </View>
         </View>
@@ -645,7 +674,7 @@ const NewDashboardScreen = () => {
         {/* Why You Need Insurance Section */}
         <View style={styles.educationSection}>
           <Text style={styles.educationTitle}>Why you Need Insurance?</Text>
-          
+
           <View style={styles.educationCard}>
             <View style={styles.educationBackground}>
               {/* Insurance Icons Pattern */}
@@ -667,18 +696,25 @@ const NewDashboardScreen = () => {
               <View style={[styles.insuranceIcon, styles.iconMoney]}>
                 <Text style={styles.iconText}>💰</Text>
               </View>
-              
+
               {/* Decorative Circles */}
               <View style={[styles.decorativeCircle, styles.circle1]} />
               <View style={[styles.decorativeCircle, styles.circle2]} />
               <View style={[styles.decorativeCircle, styles.circle3]} />
             </View>
-            
+
             <View style={styles.educationContent}>
-              <Text style={styles.educationMainText}>Covers you against unexpected expenses</Text>
-              <Text style={styles.educationSubText}>Stay secure when life brings financial shocks</Text>
-              
-              <TouchableOpacity style={styles.exploreButton} activeOpacity={0.8}>
+              <Text style={styles.educationMainText}>
+                Covers you against unexpected expenses
+              </Text>
+              <Text style={styles.educationSubText}>
+                Stay secure when life brings financial shocks
+              </Text>
+
+              <TouchableOpacity
+                style={styles.exploreButton}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.exploreButtonText}>Explore Now</Text>
               </TouchableOpacity>
             </View>
@@ -703,25 +739,28 @@ const NewDashboardScreen = () => {
       <View style={styles.bottomNav}>
         <TouchableOpacity style={[styles.navItem, styles.activeNavItem]}>
           <View style={styles.navIcon}>
-            <Text style={styles.navEmoji}>🏠</Text>
+            {/* <Text style={styles.navEmoji}>🏠</Text> */}
+            <Ionicons name="home" color={'#ffffff'} size={24} />
           </View>
         </TouchableOpacity>
         {/* <TouchableOpacity style={styles.navItem}>
           <View style={styles.navIcon}>
-            <Text style={styles.navEmoji}>📄</Text>
+          <Text style={styles.navEmoji}>📄</Text>
           </View>
-        </TouchableOpacity> */}
-        <TouchableOpacity 
+          </TouchableOpacity> */}
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('Profile')}
         >
-          <View style={styles.navIcon}>
-            <Text style={styles.navEmoji}>👤</Text>
+          <View style={[styles.navIcon, { marginTop: 4 }]}>
+            {/* <Text style={styles.navEmoji}>👤</Text> */}
+            <Ionicons name="person" color={'#000000'} size={24} />
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={handleLogout}>
-          <View style={styles.navIcon}>
-            <Text style={styles.navEmoji}>🚪</Text>
+          <View style={[styles.navIcon, { marginTop: 4 }]}>
+            {/* <Text style={styles.navEmoji}>🚪</Text> */}
+            <Ionicons name="log-out" color={'#000000'} size={24} />
           </View>
         </TouchableOpacity>
       </View>
@@ -747,7 +786,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
@@ -758,7 +797,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingTop: 50, // Fixed value that works on both emulator and device
     paddingBottom: 40,
     paddingHorizontal: 20,
@@ -847,13 +886,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 6,
     borderWidth: 2,
-    borderColor: '#E8F6F3',
+    borderColor: '#1F9393',
   },
   addPolicyContent: {
     flexDirection: 'row',
@@ -878,7 +917,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   addPolicyButton: {
-    backgroundColor: '#62D2CC',
+    backgroundColor: '#1F9393',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
@@ -899,7 +938,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -908,7 +947,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 16,
   },
   actionsGrid: {
@@ -935,7 +974,7 @@ const styles = StyleSheet.create({
   actionTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
     textAlign: 'center',
   },
   sectionHeader: {
@@ -948,11 +987,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   viewAllText: {
     fontSize: 14,
-    color: '#61BACA',
+    color: '#1F9393',
     fontWeight: '600',
   },
   insuranceCardsContainer: {
@@ -966,11 +1005,11 @@ const styles = StyleSheet.create({
   },
   insuranceCard: {
     width: width * 0.8,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     borderRadius: 16,
     padding: 20,
     marginRight: 16,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -978,11 +1017,11 @@ const styles = StyleSheet.create({
   },
   insuranceCardVertical: {
     width: '100%',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#6FD0CD',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -1026,7 +1065,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: '#ffffff4d',
   },
   cardBody: {
     marginBottom: 20,
@@ -1081,7 +1120,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 20,
     overflow: 'hidden',
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1114,7 +1153,7 @@ const styles = StyleSheet.create({
   updateTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 4,
   },
   updateSubtitle: {
@@ -1133,7 +1172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -1144,7 +1183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeNavItem: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     borderRadius: 20,
     paddingVertical: 8,
   },
@@ -1161,14 +1200,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
     borderStyle: 'dashed',
     borderWidth: 2,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
     justifyContent: 'center',
     alignItems: 'center',
   },
   noDataText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -1183,7 +1222,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginRight: 16,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -1328,7 +1367,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1356,7 +1395,7 @@ const styles = StyleSheet.create({
   alertTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 4,
   },
   alertSubtitle: {
@@ -1369,7 +1408,7 @@ const styles = StyleSheet.create({
   educationTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 16,
   },
   educationCard: {
@@ -1377,7 +1416,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 0,
     overflow: 'hidden',
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -1465,7 +1504,7 @@ const styles = StyleSheet.create({
   educationMainText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 4,
   },
   educationSubText: {
@@ -1474,7 +1513,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   exploreButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
@@ -1491,7 +1530,7 @@ const styles = StyleSheet.create({
   helpTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 16,
   },
   helpButtonsRow: {
@@ -1507,7 +1546,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     flex: 0.48,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1528,7 +1567,7 @@ const styles = StyleSheet.create({
   helpButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   chatBotButton: {
     backgroundColor: 'white',
@@ -1536,7 +1575,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 24,
     alignItems: 'center',
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1558,7 +1597,7 @@ const styles = StyleSheet.create({
   chatBotText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   profileButton: {
     padding: 4,
@@ -1567,7 +1606,8 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#6FD0CD',
+    // backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   Alert,
@@ -15,11 +14,12 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 // API Base URL - same as other screens
-const API_BASE = "https://policysaath.com/api/";
+const API_BASE = 'https://policysaath.com/api/';
 
 interface PolicyDetails {
   _id: string;
@@ -64,7 +64,9 @@ interface ApiResponse {
 const PolicyOverviewScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const [policyDetails, setPolicyDetails] = useState<PolicyDetails | null>(null);
+  const [policyDetails, setPolicyDetails] = useState<PolicyDetails | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,12 +89,16 @@ const PolicyOverviewScreen = () => {
       if (!isRefresh) setLoading(true);
       setError(null);
 
-      console.log('Fetching policy details:', { customerId, policyId, policyNumber });
-      
+      console.log('Fetching policy details:', {
+        customerId,
+        policyId,
+        policyNumber,
+      });
+
       // Use the policy details API endpoint
       const apiUrl = `${API_BASE}/v1/customer/${customerId}/${policyId}/${policyNumber}`;
       console.log('API URL:', apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -107,17 +113,17 @@ const PolicyOverviewScreen = () => {
       if (!contentType || !contentType.includes('application/json')) {
         // If not JSON, might be HTML error page - try fetching from policyData instead
         console.log('Response not JSON, trying alternate approach...');
-        
+
         // Fallback: fetch all policies and find the matching one
         const fallbackUrl = `${API_BASE}/v1/customer/customer-fetch-policy/${customerId}`;
         const fallbackResponse = await fetch(fallbackUrl);
         const fallbackData = await fallbackResponse.json();
-        
+
         if (fallbackResponse.ok && fallbackData.policyData) {
           const matchingPolicy = fallbackData.policyData.find(
-            (p: any) => p._id === policyId || p.policyNumber === policyNumber
+            (p: any) => p._id === policyId || p.policyNumber === policyNumber,
           );
-          
+
           if (matchingPolicy) {
             setPolicyDetails(matchingPolicy);
             console.log('Policy details loaded from fallback');
@@ -144,10 +150,12 @@ const PolicyOverviewScreen = () => {
         console.log('Policy details loaded successfully');
       } else if (data.policyData) {
         // If response has policyData array, find matching policy
-        const matchingPolicy = Array.isArray(data.policyData) 
-          ? data.policyData.find((p: any) => p._id === policyId || p.policyNumber === policyNumber)
+        const matchingPolicy = Array.isArray(data.policyData)
+          ? data.policyData.find(
+              (p: any) => p._id === policyId || p.policyNumber === policyNumber,
+            )
           : data.policyData;
-        
+
         if (matchingPolicy) {
           setPolicyDetails(matchingPolicy);
           console.log('Policy details loaded from policyData');
@@ -161,10 +169,13 @@ const PolicyOverviewScreen = () => {
       } else {
         throw new Error('Policy data not found in response');
       }
-
     } catch (error) {
       console.error('Error fetching policy details:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch policy details');
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch policy details',
+      );
       setPolicyDetails(null);
     } finally {
       setLoading(false);
@@ -193,11 +204,13 @@ const PolicyOverviewScreen = () => {
 
   const formatPremium = (amount: string | number) => {
     if (!amount) return '0';
-    const numericAmount = typeof amount === 'string' ? 
-      parseInt(amount.replace(/[^0-9]/g, '')) : amount;
-    
+    const numericAmount =
+      typeof amount === 'string'
+        ? parseInt(amount.replace(/[^0-9]/g, ''))
+        : amount;
+
     if (isNaN(numericAmount)) return '0';
-    
+
     return numericAmount.toLocaleString('en-IN');
   };
 
@@ -218,7 +231,9 @@ const PolicyOverviewScreen = () => {
     }
     if (endDate) {
       // Assume 1 year policy if only end date is available
-      const endYear = endDate.includes('/') ? endDate.split('/')[2] : endDate.split('-')[0];
+      const endYear = endDate.includes('/')
+        ? endDate.split('/')[2]
+        : endDate.split('-')[0];
       const startYear = (parseInt(endYear) - 1).toString();
       return `01/01/${startYear} to 31/12/${endYear}`;
     }
@@ -229,7 +244,7 @@ const PolicyOverviewScreen = () => {
     Alert.alert(
       'Download Policy',
       'Policy document download feature will be implemented soon.',
-      [{ text: 'OK' }]
+      [{ text: 'OK' }],
     );
   };
 
@@ -237,33 +252,33 @@ const PolicyOverviewScreen = () => {
     Alert.alert(
       'Pay Premium',
       'Premium payment feature will be implemented soon.',
-      [{ text: 'OK' }]
+      [{ text: 'OK' }],
     );
   };
 
   const handleContactSupport = () => {
-    Alert.alert(
-      'Contact Support',
-      'Choose contact method:',
-      [
-        { text: 'Call', onPress: () => handleCall('1800-XXX-XXXX') },
-        { text: 'Email', onPress: () => handleEmail('support@insurance.com') },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    Alert.alert('Contact Support', 'Choose contact method:', [
+      { text: 'Call', onPress: () => handleCall('1800-XXX-XXXX') },
+      { text: 'Email', onPress: () => handleEmail('support@insurance.com') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleChatWithAgent = () => {
     if (policyDetails?.agentPhone || policyDetails?.agentContact) {
-      const phoneNumber = policyDetails.agentPhone || policyDetails.agentContact;
+      const phoneNumber =
+        policyDetails.agentPhone || policyDetails.agentContact;
       Alert.alert(
         'Contact Agent',
         `Contact ${policyDetails.agentName || 'your agent'}?`,
         [
           { text: 'Call', onPress: () => handleCall(phoneNumber || '') },
-          { text: 'Email', onPress: () => handleEmail(policyDetails.agentEmail || '') },
-          { text: 'Cancel', style: 'cancel' }
-        ]
+          {
+            text: 'Email',
+            onPress: () => handleEmail(policyDetails.agentEmail || ''),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
       );
     } else {
       Alert.alert('Chat with Agent', 'Agent contact information not available');
@@ -272,8 +287,8 @@ const PolicyOverviewScreen = () => {
 
   const handleCall = (phoneNumber: string) => {
     if (phoneNumber && phoneNumber.trim()) {
-      Linking.openURL(`tel:${phoneNumber}`).catch(err => 
-        Alert.alert('Error', 'Unable to make phone call')
+      Linking.openURL(`tel:${phoneNumber}`).catch(err =>
+        Alert.alert('Error', 'Unable to make phone call'),
       );
     } else {
       Alert.alert('Error', 'Phone number not available');
@@ -282,8 +297,8 @@ const PolicyOverviewScreen = () => {
 
   const handleEmail = (email: string) => {
     if (email && email.trim()) {
-      Linking.openURL(`mailto:${email}`).catch(err => 
-        Alert.alert('Error', 'Unable to open email client')
+      Linking.openURL(`mailto:${email}`).catch(err =>
+        Alert.alert('Error', 'Unable to open email client'),
       );
     } else {
       Alert.alert('Error', 'Email address not available');
@@ -294,16 +309,19 @@ const PolicyOverviewScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+        <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.headerBackButton}
+          >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Policy Overview</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4ECDC4" />
+          <ActivityIndicator size="large" color="#1F9393" />
           <Text style={styles.loadingText}>Loading policy details...</Text>
         </View>
       </SafeAreaView>
@@ -314,9 +332,12 @@ const PolicyOverviewScreen = () => {
   if (error || !policyDetails) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+        <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.headerBackButton}
+          >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Policy Overview</Text>
@@ -324,10 +345,16 @@ const PolicyOverviewScreen = () => {
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>⚠️ {error || 'Policy not found'}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchPolicyDetails()}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => fetchPolicyDetails()}
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -337,26 +364,29 @@ const PolicyOverviewScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
+      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.headerBackButton}
+        >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Policy Overview</Text>
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#4ECDC4']}
-            tintColor="#4ECDC4"
+            colors={['#1F9393']}
+            tintColor="#1F9393"
           />
         }
       >
@@ -368,7 +398,7 @@ const PolicyOverviewScreen = () => {
             </Text>
             <View style={styles.companyLogo} />
           </View>
-          
+
           <Text style={styles.policyName}>
             {policyDetails.productName || 'Insurance Policy'}
           </Text>
@@ -379,23 +409,51 @@ const PolicyOverviewScreen = () => {
             Policy Number: {policyDetails.policyNumber}
           </Text>
           <Text style={styles.validPeriod}>
-            Valid Period: {getPolicyPeriod(policyDetails.startDate, policyDetails.endDate)}
+            Valid Period:{' '}
+            {getPolicyPeriod(policyDetails.startDate, policyDetails.endDate)}
           </Text>
-          
+
           <View style={styles.cardFooter}>
             <View style={styles.premiumInfo}>
               <Text style={styles.premiumLabel}>
-                Premium: ₹{formatPremium(policyDetails.premiumAmount)} / {policyDetails.policyPeriod?.toLowerCase().includes('month') ? 'Month' : 'Year'}
+                Premium: ₹{formatPremium(policyDetails.premiumAmount)} /{' '}
+                {policyDetails.policyPeriod?.toLowerCase().includes('month')
+                  ? 'Month'
+                  : 'Year'}
               </Text>
             </View>
-            <TouchableOpacity style={[
-              styles.statusBadge,
-              policyDetails.status?.toLowerCase() === 'active' && styles.activeStatusBadge,
-              policyDetails.status?.toLowerCase() === 'due' && styles.dueStatusBadge,
-              policyDetails.status?.toLowerCase() === 'expired' && styles.expiredStatusBadge,
-            ]}>
+            <TouchableOpacity
+              style={[
+                styles.statusBadge,
+                policyDetails.status?.toLowerCase() === 'active' &&
+                  styles.activeStatusBadge,
+                policyDetails.status?.toLowerCase() === 'due' &&
+                  styles.dueStatusBadge,
+                policyDetails.status?.toLowerCase() === 'expired' &&
+                  styles.expiredStatusBadge,
+              ]}
+            >
               <Text style={styles.statusText}>
                 {policyDetails.status || 'Active'} Insurance
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ alignItems: 'flex-end' }}>
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#1F9393',
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 20,
+                width: '50%',
+              }}
+              onPress={() => {
+                console.log('change status', { customerId, policyId });
+              }}
+            >
+              <Text style={{ color: '#fff', textAlign: 'center' }}>
+                Change Status
               </Text>
             </TouchableOpacity>
           </View>
@@ -403,32 +461,47 @@ const PolicyOverviewScreen = () => {
 
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'overview' && styles.activeTab]}
             onPress={() => setActiveTab('overview')}
           >
-            <Text style={styles.tabIcon}>👁</Text>
-            <Text style={[styles.tabText, activeTab === 'overview' && styles.activeTabText]}>
+            {/* <Text style={styles.tabIcon}>👁</Text> */}
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'overview' && styles.activeTabText,
+              ]}
+            >
               Overview
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'documents' && styles.activeTab]}
             onPress={() => setActiveTab('documents')}
           >
-            <Text style={styles.tabIcon}>📄</Text>
-            <Text style={[styles.tabText, activeTab === 'documents' && styles.activeTabText]}>
+            {/* <Text style={styles.tabIcon}>📄</Text> */}
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'documents' && styles.activeTabText,
+              ]}
+            >
               Documents
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'pay' && styles.activeTab]}
             onPress={() => setActiveTab('pay')}
           >
-            <Text style={styles.tabIcon}>💳</Text>
-            <Text style={[styles.tabText, activeTab === 'pay' && styles.activeTabText]}>
+            {/* <Text style={styles.tabIcon}>💳</Text> */}
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'pay' && styles.activeTabText,
+              ]}
+            >
               Pay Record
             </Text>
           </TouchableOpacity>
@@ -440,46 +513,54 @@ const PolicyOverviewScreen = () => {
             {/* Policy Holder Details */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Policy Holder Details</Text>
-              
+
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>FULL NAME</Text>
                 <Text style={styles.detailValue}>
                   {policyDetails.policyHolderName || 'Not available'}
                 </Text>
               </View>
-              
+
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>ADDRESS</Text>
                 <Text style={styles.detailValue}>
                   {policyDetails.policyHolderAddress || 'Address not available'}
                 </Text>
               </View>
-              
+
               <View style={styles.detailRowDouble}>
                 <View style={styles.detailColumn}>
                   <Text style={styles.detailLabel}>PHONE</Text>
-                  <TouchableOpacity 
-                    onPress={() => handleCall(policyDetails.policyHolderPhone || '')}
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleCall(policyDetails.policyHolderPhone || '')
+                    }
                     disabled={!policyDetails.policyHolderPhone}
                   >
-                    <Text style={[
-                      styles.detailValue, 
-                      policyDetails.policyHolderPhone && styles.linkText
-                    ]}>
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        policyDetails.policyHolderPhone && styles.linkText,
+                      ]}
+                    >
                       {policyDetails.policyHolderPhone || 'Not available'}
                     </Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.detailColumn}>
                   <Text style={styles.detailLabel}>EMAIL</Text>
-                  <TouchableOpacity 
-                    onPress={() => handleEmail(policyDetails.policyHolderEmail || '')}
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleEmail(policyDetails.policyHolderEmail || '')
+                    }
                     disabled={!policyDetails.policyHolderEmail}
                   >
-                    <Text style={[
-                      styles.detailValue, 
-                      policyDetails.policyHolderEmail && styles.linkText
-                    ]}>
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        policyDetails.policyHolderEmail && styles.linkText,
+                      ]}
+                    >
                       {policyDetails.policyHolderEmail || 'Not available'}
                     </Text>
                   </TouchableOpacity>
@@ -488,51 +569,58 @@ const PolicyOverviewScreen = () => {
             </View>
 
             {/* Covered Members */}
-            {policyDetails.insuredMembers && policyDetails.insuredMembers.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Covered Members</Text>
-                
-                {policyDetails.insuredMembers.map((member, index) => (
-                  <View key={index} style={styles.memberCard}>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>
-                        FULL NAME {index === 0 ? '(PRIMARY MEMBER)' : `(MEMBER ${index + 1})`}
-                      </Text>
-                      <Text style={styles.detailValue}>
-                        {member.insuredName || member.name || 'Not available'}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.detailRowDouble}>
-                      <View style={styles.detailColumn}>
-                        <Text style={styles.detailLabel}>RELATION</Text>
+            {policyDetails.insuredMembers &&
+              policyDetails.insuredMembers.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Covered Members</Text>
+
+                  {policyDetails.insuredMembers.map((member, index) => (
+                    <View key={index} style={styles.memberCard}>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>
+                          FULL NAME{' '}
+                          {index === 0
+                            ? '(PRIMARY MEMBER)'
+                            : `(MEMBER ${index + 1})`}
+                        </Text>
                         <Text style={styles.detailValue}>
-                          {member.relationship || member.relation || 'Not specified'}
+                          {member.insuredName || member.name || 'Not available'}
                         </Text>
                       </View>
-                      <View style={styles.detailColumn}>
-                        <Text style={styles.detailLabel}>DATE OF BIRTH</Text>
-                        <Text style={styles.detailValue}>
-                          {formatDate(member.dob || member.dateOfBirth || '')}
-                        </Text>
+
+                      <View style={styles.detailRowDouble}>
+                        <View style={styles.detailColumn}>
+                          <Text style={styles.detailLabel}>RELATION</Text>
+                          <Text style={styles.detailValue}>
+                            {member.relationship ||
+                              member.relation ||
+                              'Not specified'}
+                          </Text>
+                        </View>
+                        <View style={styles.detailColumn}>
+                          <Text style={styles.detailLabel}>DATE OF BIRTH</Text>
+                          <Text style={styles.detailValue}>
+                            {formatDate(member.dob || member.dateOfBirth || '')}
+                          </Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                ))}
-              </View>
-            )}
+                  ))}
+                </View>
+              )}
 
             {/* Agent and Company Details */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Agent and Company Details</Text>
-              
+
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>INSURANCE COMPANY</Text>
                 <Text style={styles.detailValue}>
-                  {policyDetails.productName || getCompanyName(policyDetails.policyType || '')}
+                  {policyDetails.productName ||
+                    getCompanyName(policyDetails.policyType || '')}
                 </Text>
               </View>
-              
+
               <View style={styles.detailRowDouble}>
                 <View style={styles.detailColumn}>
                   <Text style={styles.detailLabel}>AGENT NAME</Text>
@@ -542,20 +630,34 @@ const PolicyOverviewScreen = () => {
                 </View>
                 <View style={styles.detailColumn}>
                   <Text style={styles.detailLabel}>AGENT CONTACT</Text>
-                  <TouchableOpacity 
-                    onPress={() => handleCall(policyDetails.agentContact || policyDetails.agentPhone || '')}
-                    disabled={!policyDetails.agentContact && !policyDetails.agentPhone}
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleCall(
+                        policyDetails.agentContact ||
+                          policyDetails.agentPhone ||
+                          '',
+                      )
+                    }
+                    disabled={
+                      !policyDetails.agentContact && !policyDetails.agentPhone
+                    }
                   >
-                    <Text style={[
-                      styles.detailValue, 
-                      (policyDetails.agentContact || policyDetails.agentPhone) && styles.linkText
-                    ]}>
-                      {policyDetails.agentContact || policyDetails.agentPhone || 'Not available'}
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        (policyDetails.agentContact ||
+                          policyDetails.agentPhone) &&
+                          styles.linkText,
+                      ]}
+                    >
+                      {policyDetails.agentContact ||
+                        policyDetails.agentPhone ||
+                        'Not available'}
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               <View style={styles.detailRowDouble}>
                 <View style={styles.detailColumn}>
                   <Text style={styles.detailLabel}>POLICY TYPE</Text>
@@ -565,14 +667,16 @@ const PolicyOverviewScreen = () => {
                 </View>
                 <View style={styles.detailColumn}>
                   <Text style={styles.detailLabel}>AGENT EMAIL</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => handleEmail(policyDetails.agentEmail || '')}
                     disabled={!policyDetails.agentEmail}
                   >
-                    <Text style={[
-                      styles.detailValue, 
-                      policyDetails.agentEmail && styles.linkText
-                    ]}>
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        policyDetails.agentEmail && styles.linkText,
+                      ]}
+                    >
                       {policyDetails.agentEmail || 'Not available'}
                     </Text>
                   </TouchableOpacity>
@@ -583,28 +687,34 @@ const PolicyOverviewScreen = () => {
             {/* Policy Summary */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Policy Summary</Text>
-              
+
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>PREMIUM</Text>
                 <Text style={styles.detailValue}>
-                  ₹ {formatPremium(policyDetails.premiumAmount)} / {policyDetails.policyPeriod?.toLowerCase().includes('month') ? 'month' : 'year'}
+                  ₹ {formatPremium(policyDetails.premiumAmount)} /{' '}
+                  {policyDetails.policyPeriod?.toLowerCase().includes('month')
+                    ? 'month'
+                    : 'year'}
                 </Text>
               </View>
-              
+
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>POLICY TERM</Text>
                 <Text style={styles.detailValue}>
-                  {policyDetails.policyTerm || policyDetails.tenure || 'Not specified'}
+                  {policyDetails.policyTerm ||
+                    policyDetails.tenure ||
+                    'Not specified'}
                 </Text>
               </View>
-              
+
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>MEMBERS</Text>
                 <Text style={styles.detailValue}>
-                  {policyDetails.insuredMembers?.length || 1} member{(policyDetails.insuredMembers?.length || 1) > 1 ? 's' : ''}
+                  {policyDetails.insuredMembers?.length || 1} member
+                  {(policyDetails.insuredMembers?.length || 1) > 1 ? 's' : ''}
                 </Text>
               </View>
-              
+
               {policyDetails.coverage && (
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>COVERAGE</Text>
@@ -618,23 +728,35 @@ const PolicyOverviewScreen = () => {
             {/* Quick Actions */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
-              
-              <TouchableOpacity style={styles.actionButton} onPress={handleDownloadPolicy}>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleDownloadPolicy}
+              >
                 <Text style={styles.actionButtonText}>Download My Policy</Text>
                 <Text style={styles.actionButtonIcon}>⬇</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton} onPress={handlePayPremium}>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handlePayPremium}
+              >
                 <Text style={styles.actionButtonText}>Pay Premium Now</Text>
                 <Text style={styles.actionButtonIcon}>💳</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton} onPress={handleContactSupport}>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleContactSupport}
+              >
                 <Text style={styles.actionButtonText}>Contact Support</Text>
                 <Text style={styles.actionButtonIcon}>📞</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton} onPress={handleChatWithAgent}>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleChatWithAgent}
+              >
                 <Text style={styles.actionButtonText}>Chat with Agent</Text>
                 <Text style={styles.actionButtonIcon}>💬</Text>
               </TouchableOpacity>
@@ -646,7 +768,9 @@ const PolicyOverviewScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Policy Documents</Text>
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Document management coming soon</Text>
+              <Text style={styles.emptyStateText}>
+                Document management coming soon
+              </Text>
               <Text style={styles.emptyStateSubtext}>
                 You will be able to view and download policy documents here
               </Text>
@@ -658,7 +782,9 @@ const PolicyOverviewScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Payment Records</Text>
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Payment history coming soon</Text>
+              <Text style={styles.emptyStateText}>
+                Payment history coming soon
+              </Text>
               <Text style={styles.emptyStateSubtext}>
                 You will be able to view your payment history and due dates here
               </Text>
@@ -701,7 +827,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
@@ -715,26 +841,26 @@ const styles = StyleSheet.create({
   backButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
   },
   backButtonText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontSize: 16,
     fontWeight: '600',
   },
   header: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   headerBackButton: {
-    padding: 8,
+    // padding: 8,
   },
   backArrow: {
     color: 'white',
@@ -754,11 +880,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   policyCard: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#6FD0CD',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -807,6 +933,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
   premiumInfo: {
     flex: 1,
@@ -817,7 +944,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statusBadge: {
-    backgroundColor: '#61BACA',
+    backgroundColor: '#1F9393',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -842,7 +969,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -854,11 +981,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
   },
   tabIcon: {
     fontSize: 16,
@@ -877,7 +1004,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -886,7 +1013,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 16,
   },
   detailRow: {
@@ -918,13 +1045,13 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   linkText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     textDecorationLine: 'underline',
   },
   memberCard: {
     marginBottom: 16,
     borderLeftWidth: 3,
-    borderLeftColor: '#4ECDC4',
+    borderLeftColor: '#1F9393',
     paddingLeft: 12,
   },
   actionButton: {
@@ -941,12 +1068,12 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 16,
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: '600',
   },
   actionButtonIcon: {
     fontSize: 16,
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   emptyState: {
     alignItems: 'center',

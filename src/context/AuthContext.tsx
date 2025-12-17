@@ -1,5 +1,11 @@
 // AuthContext.tsx - Fixed AsyncStorage error
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextType {
@@ -32,7 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ customerId, setCustomerId: handleSetCustomerId }}>
+    <AuthContext.Provider
+      value={{ customerId, setCustomerId: handleSetCustomerId }}
+    >
       {children}
     </AuthContext.Provider>
   );

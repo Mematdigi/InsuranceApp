@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const AnimatedTextItem = ({
   item,
@@ -16,7 +17,7 @@ const AnimatedTextItem = ({
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      opacity: withTiming(isOld ? 0 : 1, { duration: 300 }),
+      // opacity: withTiming(isOld ? 0 : 1, { duration: 300 }),
       transform: [
         {
           translateY: withTiming(isOld ? -10 : 0, { duration: 300 }),
@@ -82,9 +83,7 @@ const Start1 = () => {
 
       {visibleSteps === texts.length ? (
         <TouchableOpacity
-          style={[
-            styles.btn
-          ]}
+          style={[styles.btn]}
           onPress={navigateToLogin}
           // activeOpacity={0.8}
           // disabled={visibleSteps === texts.length}
@@ -102,6 +101,7 @@ const Start1 = () => {
           // disabled={visibleSteps === texts.length}
         >
           <Text style={styles.btnText}>Next</Text>
+          {/* <Ionicons name="arrow-back-outline" size={20} color={'#6FD0CD'} /> */}
         </TouchableOpacity>
       )}
     </View>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   btn: {
     marginTop: 28,
     alignSelf: 'flex-start',
-    backgroundColor: '#33C2CF',
+    backgroundColor: '#1F9393',
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 10,
@@ -142,6 +142,6 @@ const styles = StyleSheet.create({
   text2: {
     fontSize: 26,
     fontWeight: '600',
-    color: '#33C2CF',
+    color: '#6FD0CD',
   },
 });

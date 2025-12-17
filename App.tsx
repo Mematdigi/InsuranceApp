@@ -33,7 +33,8 @@ export type RootStackParamList = {
   SelectInsurance: undefined;
   AddPolicy: undefined;
   ChooseCompany: undefined;
-  AddPolicyStep2: { company: string };
+  // AddPolicyStep2: { company: string };
+  AddPolicyStep2: undefined;
   //AddPolicyStep3: { company: string; insuranceNumber: string };
   // AddPolicyStep4: { company: string; insuranceNumber: string };
   UploadPolicy: { company?: string; insuranceNumber?: string };
@@ -107,7 +108,7 @@ const App = () => {
           <Stack.Screen name="ChooseCompany" component={ChooseCompanyScreen} />
           <Stack.Screen
             name="AddPolicyStep2"
-            component={InsuranceNumberScreen}
+            component={InsuranceNumberScreen} 
           />
           {/* <Stack.Screen name="AddPolicyStep3" component={InsuranceNumberWithDataScreen} /> */}
           <Stack.Screen name="UploadPolicy" component={UploadPolicyScreen} />
