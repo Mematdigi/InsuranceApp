@@ -11,10 +11,12 @@ import {
   StatusBar,
   Animated,
   Easing,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 const API_BASE = 'https://policysaath.com/api/api';
@@ -336,16 +338,21 @@ const LoginScreen = () => {
       setLoading(true);
 
       if (isOtpLogin && !otpSent) {
+        // console.log('otp');
         const res = await fetch(`${API_BASE}/otp-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contactNumber: identifier, role }),
         });
+        console.log(res);
         const data = await res.json();
+        console.log(data);
         if (!res.ok) {
           if (
             data.msg?.includes('not found') ||
-            data.msg?.includes('does not exist')
+            data.msg?.includes('does not exist') 
+            // ||
+            // data.msg?.includes('OTP not sent')
           ) {
             Alert.alert(
               'Account Not Found',
@@ -362,7 +369,7 @@ const LoginScreen = () => {
 
         setOtpSent(true);
         setTimer(120);
-        Alert.alert('Success', 'OTP sent successfully!');
+        // Alert.alert('Success', 'OTP sent successfully!');
       } else if (isOtpLogin && otpSent) {
         const enteredOtp = otp.join('');
         if (enteredOtp.length < 6) {
@@ -429,7 +436,7 @@ const LoginScreen = () => {
         };
 
         await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
-        Alert.alert('Success', 'Login successful!');
+        // Alert.alert('Success', 'Login successful!');
         setCustomerId(normalizedUser.id);
 
         if (role === 'Agent') {
@@ -520,7 +527,7 @@ const LoginScreen = () => {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar backgroundColor="#62D2CC" barStyle="light-content" />
+      <StatusBar backgroundColor="#1F9393" barStyle="light-content" />
 
       {/* Top Turquoise Section with Enhanced Header */}
       <View style={styles.topSection}>
@@ -690,9 +697,9 @@ const LoginScreen = () => {
                       onChangeText={setIdentifier}
                       onFocus={() => setEmailFocused(true)}
                       onBlur={() => setEmailFocused(false)}
-                      keyboardType="email-address"
+                      keyboardType={!isOtpLogin ? 'email-address' : 'phone-pad'}
                       autoCapitalize="none"
-                      autoComplete="email"
+                      // autoComplete="email"
                     />
                     <Text
                       style={[
@@ -700,7 +707,7 @@ const LoginScreen = () => {
                         (emailFocused || identifier) && styles.labelFocused, // ✅ ADD dynamic styling
                       ]}
                     >
-                      Email
+                      {!isOtpLogin ? 'Email' : 'Phone number'}
                     </Text>
                   </View>
 
@@ -870,26 +877,35 @@ const LoginScreen = () => {
                   </TouchableOpacity>
 
                   {/* Continue with text */}
-                  <Text style={styles.continueWithText}>or continue with</Text>
+                  {/* <Text style={styles.continueWithText}>or continue with</Text> */}
 
                   {/* Social Buttons */}
-                  <View style={styles.socialButtonsContainer}>
+                  {/* <View style={styles.socialButtonsContainer}>
                     <TouchableOpacity style={styles.socialButton}>
-                      <View style={styles.facebookButton}>
-                        <Text style={styles.facebookIcon}>f</Text>
-                      </View>
+                     
+
+                      <Ionicons
+                        name="logo-facebook"
+                        size={50}
+                        color={'#0866ff'}
+                      />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialButton}>
-                      <View style={styles.googleButton}>
-                        <Text style={styles.googleIcon}>G</Text>
-                      </View>
+                      
+                      <Image
+                        source={require('../../assets/images/google-icon-logo-svgrepo-com.png')}
+                        style={{ resizeMode: 'cover', height: 50, width: 50 }}
+                      />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialButton}>
-                      <View style={styles.appleButton}>
-                        <Text style={styles.appleIcon}>🍎</Text>
-                      </View>
+                    
+                        <Ionicons
+                          name="logo-apple"
+                          size={50}
+                          color={'#000000'}
+                        />
                     </TouchableOpacity>
-                  </View>
+                  </View> */}
                 </>
               )}
             </>
@@ -973,10 +989,10 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#62D2CC',
+    backgroundColor: '#1F9393',
   },
   topSection: {
-    backgroundColor: '#62D2CC',
+    backgroundColor: '#1F9393',
     height: height * 0.3,
     justifyContent: 'center',
     paddingTop: 30,
@@ -1058,7 +1074,7 @@ const styles = StyleSheet.create({
     left: -50,
     right: -50,
     height: 40,
-    backgroundColor: '#62D2CC',
+    backgroundColor: '#1F9393',
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 150,
     transform: [{ scaleX: 1.5 }],
@@ -1082,7 +1098,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    // elevation: 3,
   },
   tab: {
     flex: 1,
@@ -1102,8 +1118,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 12,
   },
   activeTab: {
-    backgroundColor: '#62D2CC',
-    shadowColor: '#62D2CC',
+    backgroundColor: '#1F9393',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -1112,7 +1128,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#62D2CC',
+    color: '#1F9393',
   },
   activeTabText: {
     color: 'white',
@@ -1135,11 +1151,11 @@ const styles = StyleSheet.create({
   },
 
   labelFocused: {
-    color: '#62D2CC',
+    color: '#1F9393',
   },
   inputFocused: {
-    borderColor: '#62D2CC',
-    shadowColor: '#62D2CC',
+    borderColor: '#1F9393',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1164,7 +1180,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: 14,
-    color: '#62D2CC',
+    color: '#1F9393',
     fontWeight: '600',
   },
   // New simplified OTP link styles
@@ -1175,17 +1191,17 @@ const styles = StyleSheet.create({
   },
   otpLinkSimpleText: {
     fontSize: 14,
-    color: '#62D2CC',
+    color: '#1F9393',
     fontWeight: '500',
     textDecorationLine: 'underline',
   },
   loginButton: {
-    backgroundColor: '#62D2CC',
+    backgroundColor: '#1F9393',
     borderRadius: 12,
     paddingVertical: 18,
     alignItems: 'center',
     marginBottom: 24,
-    shadowColor: '#62D2CC',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1218,7 +1234,7 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     borderWidth: 2,
-    borderColor: '#62D2CC',
+    borderColor: '#1F9393',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -1226,7 +1242,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   registerButtonText: {
-    color: '#62D2CC',
+    color: '#1F9393',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -1317,7 +1333,7 @@ const styles = StyleSheet.create({
   },
   identifierText: {
     fontWeight: '700',
-    color: '#62D2CC',
+    color: '#1F9393',
   },
   otpContainer: {
     flexDirection: 'row',
@@ -1338,9 +1354,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   otpInputFilled: {
-    borderColor: '#62D2CC',
+    borderColor: '#1F9393',
     backgroundColor: '#F0FDFA',
-    shadowColor: '#62D2CC',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1360,7 +1376,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   resendText: {
-    color: '#62D2CC',
+    color: '#1F9393',
     fontSize: 16,
     fontWeight: '600',
   },

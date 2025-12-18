@@ -145,7 +145,7 @@ const FAQScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -224,15 +224,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
   },
   header: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   backButton: {
-    padding: 8,
+    // padding: 8,
   },
   backArrow: {
     color: 'white',
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     textAlign: 'center',
     lineHeight: 36,
   },
@@ -276,13 +276,13 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     fontSize: 20,
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginRight: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: '500',
   },
   categoriesContainer: {
@@ -334,17 +334,17 @@ const styles = StyleSheet.create({
   faqSectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   viewAllText: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: '600',
   },
   faqList: {
     backgroundColor: 'white',
     borderRadius: 16,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -364,19 +364,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginRight: 16,
     lineHeight: 22,
   },
   faqToggle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     width: 30,
     textAlign: 'center',
   },
   faqToggleExpanded: {
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   faqAnswer: {
     paddingHorizontal: 20,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 8,
   },
   noResultsSubtext: {

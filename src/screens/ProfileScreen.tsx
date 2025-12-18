@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   Alert,
@@ -15,6 +14,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface UserProfile {
   name: string;
@@ -30,12 +31,12 @@ const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: '',
     username: '',
     email: '',
-    contact: ''
+    contact: '',
   });
 
   // Edit form state
@@ -43,7 +44,7 @@ const ProfileScreen = () => {
     name: '',
     username: '',
     email: '',
-    contact: ''
+    contact: '',
   });
 
   const [quickLoginEnabled, setQuickLoginEnabled] = useState(true);
@@ -51,7 +52,7 @@ const ProfileScreen = () => {
   useEffect(() => {
     // Dismiss any existing alerts when component mounts
     console.log('🔄 Profile screen mounted');
-    
+
     loadUserProfile();
   }, [customerId]);
 
@@ -62,7 +63,7 @@ const ProfileScreen = () => {
       return () => {
         console.log('🎯 Profile screen unfocused');
       };
-    }, [])
+    }, []),
   );
 
   const loadUserProfile = async () => {
@@ -70,7 +71,7 @@ const ProfileScreen = () => {
 
     try {
       setIsLoading(true);
-      
+
       // Try to load from API first
       const response = await fetch(
         `https://policysaath.com/v1/customer/customers/${customerId}`,
@@ -79,18 +80,22 @@ const ProfileScreen = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
+      
 
       if (response.ok) {
         const data = await response.json();
         const profileData = {
           name: data.name || '',
-          username: data.username || `@${data.name?.toLowerCase().replace(' ', '')}` || '',
+          username:
+            data.username ||
+            `@${data.name?.toLowerCase().replace(' ', '')}` ||
+            '',
           email: data.email || '',
           contact: data.contact || '',
         };
-        
+
         setUserProfile(profileData);
         setEditForm(profileData);
       } else {
@@ -102,7 +107,7 @@ const ProfileScreen = () => {
             name: user.name || 'User',
             username: user.username || '@user',
             email: user.email || '',
-            contact: user.contact || user.mobile || user.phone || ''
+            contact: user.contact || user.mobile || user.phone || '',
           };
           setUserProfile(profileData);
           setEditForm(profileData);
@@ -119,7 +124,7 @@ const ProfileScreen = () => {
             name: user.name || 'User',
             username: user.username || '@user',
             email: user.email || '',
-            contact: user.contact || user.mobile || user.phone || ''
+            contact: user.contact || user.mobile || user.phone || '',
           };
           setUserProfile(profileData);
           setEditForm(profileData);
@@ -161,37 +166,50 @@ const ProfileScreen = () => {
     if (editForm.contact && editForm.contact.trim()) {
       const contactRegex = /^[0-9]{10}$/;
       if (!contactRegex.test(editForm.contact.replace(/\s/g, ''))) {
-        Alert.alert('Validation Error', 'Please enter a valid 10-digit contact number');
+        Alert.alert(
+          'Validation Error',
+          'Please enter a valid 10-digit contact number',
+        );
         return;
       }
     }
 
     try {
       setIsSaving(true);
-      
+
       const payload = {
         name: editForm.name.trim(),
         email: editForm.email.trim(),
         contact: editForm.contact.trim().replace(/\s/g, ''),
       };
 
-      console.log('💾 Saving profile to:', `https://policysaath.com/v1/customer/customers/${customerId}`);
+      console.log(
+        '💾 Saving profile to:',
+        `https://policysaath.com/v1/customer/customers/${customerId}`,
+      );
       console.log('💾 Payload being sent:', JSON.stringify(payload, null, 2));
       console.log('💾 Customer ID:', customerId);
 
       const response = await fetch(
         `https://policysaath.com/v1/customer/customers/${customerId}`,
         {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
+      console.log(response);
+
+
+
       console.log('💾 Response status:', response.status);
-      console.log('💾 Response headers:', JSON.stringify([...response.headers.entries()]));
+      console.log(
+        '💾 Response headers:',
+        JSON.stringify([...response.headers.entries()]),
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -200,19 +218,24 @@ const ProfileScreen = () => {
       }
 
       const updatedData = await response.json();
-      console.log('✅ Profile updated - Response:', JSON.stringify(updatedData, null, 2));
+      console.log(updatedData);
+      console.log(
+        '✅ Profile updated - Response:',
+        JSON.stringify(updatedData, null, 2),
+      );
 
       // Update local state
       setUserProfile(editForm);
-      
+
       // Also save to AsyncStorage
       await AsyncStorage.setItem('user', JSON.stringify(editForm));
-      
+
       Alert.alert('Success', 'Profile updated successfully!');
       setActiveTab('profile'); // Switch back to profile view
     } catch (error) {
       console.error('❌ Save profile error:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       Alert.alert('Save Error', `Failed to save profile: ${errorMessage}`);
     } finally {
       setIsSaving(false);
@@ -224,56 +247,61 @@ const ProfileScreen = () => {
   };
 
   const handleNominees = () => {
-    Alert.alert('Nominees / Dependents', 'Manage your nominees functionality would be implemented here');
-  };
-
-  const handleClaimSecurity = () => {
-    Alert.alert('Claim Security', 'Add extra protection for claims functionality would be implemented here');
-  };
-
-  const handleLogout = async () => {
     Alert.alert(
-      'Log out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('user');
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            } catch (error) {
-              console.error('Error logging out:', error);
-            }
-          }
-        }
-      ]
+      'Nominees / Dependents',
+      'Manage your nominees functionality would be implemented here',
     );
   };
 
+  const handleClaimSecurity = () => {
+    Alert.alert(
+      'Claim Security',
+      'Add extra protection for claims functionality would be implemented here',
+    );
+  };
+
+  const handleLogout = async () => {
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await AsyncStorage.removeItem('user');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (error) {
+            console.error('Error logging out:', error);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleHelpSupport = () => {
-    Alert.alert('Help & Support', 'Help and support functionality would be implemented here');
+    Alert.alert(
+      'Help & Support',
+      'Help and support functionality would be implemented here',
+    );
   };
 
   const handleAboutApp = () => {
     Alert.alert('About App', 'About app information would be shown here');
   };
 
-  const ProfileMenuItem = ({ 
-    icon, 
-    title, 
-    subtitle, 
-    onPress, 
-    showArrow = true, 
+  const ProfileMenuItem = ({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    showArrow = true,
     showBadge = false,
     showSwitch = false,
     switchValue = false,
-    onSwitchChange 
+    onSwitchChange,
   }: {
     icon: string;
     title: string;
@@ -285,13 +313,14 @@ const ProfileScreen = () => {
     switchValue?: boolean;
     onSwitchChange?: (value: boolean) => void;
   }) => (
-    <TouchableOpacity 
-      style={styles.menuItem} 
+    <TouchableOpacity
+      style={styles.menuItem}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View style={styles.menuItemIcon}>
-        <Text style={styles.menuItemIconText}>{icon}</Text>
+        {/* <Text style={styles.menuItemIconText}>{icon}</Text> */}
+        <Ionicons name={icon} size={24} color={'#000'} />
       </View>
       <View style={styles.menuItemContent}>
         <Text style={styles.menuItemTitle}>{title}</Text>
@@ -303,7 +332,7 @@ const ProfileScreen = () => {
           <Switch
             value={switchValue}
             onValueChange={onSwitchChange}
-            trackColor={{ false: '#E2E8F0', true: '#4ECDC4' }}
+            trackColor={{ false: '#E2E8F0', true: '#1F9393' }}
             thumbColor={switchValue ? '#ffffff' : '#ffffff'}
             ios_backgroundColor="#E2E8F0"
           />
@@ -332,32 +361,43 @@ const ProfileScreen = () => {
                 <View style={styles.avatarContainer}>
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>
-                      {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'U'}
+                      {userProfile.name
+                        ? userProfile.name.charAt(0).toUpperCase()
+                        : 'U'}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{userProfile.name || 'No name set'}</Text>
-                  <Text style={styles.userHandle}>{userProfile.email || '@user'}</Text>
+                  <Text style={styles.userName}>
+                    {userProfile.name || 'No name set'}
+                  </Text>
+                  <Text style={styles.userHandle}>
+                    {userProfile.email || '@user'}
+                  </Text>
                 </View>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.editButton}
                 onPress={() => setActiveTab('edit')}
               >
-                <Text style={styles.editIcon}>✏️</Text>
+                {/* <Text style={styles.editIcon}>✏️</Text> */}
+                <Ionicons name='pencil' size={24} color={'#fff'} />
               </TouchableOpacity>
             </View>
 
             {/* Profile Details */}
             <View style={styles.menuSection}>
               <View style={styles.profileDetail}>
-                <Text style={styles.profileDetailLabel}>📧 Email</Text>
-                <Text style={styles.profileDetailValue}>{userProfile.email || 'Not set'}</Text>
+                <Text style={styles.profileDetailLabel}>Email</Text>
+                <Text style={styles.profileDetailValue}>
+                  {userProfile.email || 'Not set'}
+                </Text>
               </View>
               <View style={styles.profileDetail}>
-                <Text style={styles.profileDetailLabel}>📱 Contact</Text>
-                <Text style={styles.profileDetailValue}>{userProfile.contact || 'Not set'}</Text>
+                <Text style={styles.profileDetailLabel}>Contact</Text>
+                <Text style={styles.profileDetailValue}>
+                  {userProfile.contact || 'Not set'}
+                </Text>
               </View>
               {/* <View style={styles.profileDetail}>
                 <Text style={styles.profileDetailLabel}>🆔 Customer ID</Text>
@@ -368,7 +408,7 @@ const ProfileScreen = () => {
             {/* Main Menu Section */}
             <View style={styles.menuSection}>
               <ProfileMenuItem
-                icon="📋"
+                icon="document"
                 title="My Policies"
                 subtitle="Manage your insurance policies"
                 onPress={handleMyPolicies}
@@ -376,7 +416,7 @@ const ProfileScreen = () => {
               />
 
               <ProfileMenuItem
-                icon="🔐"
+                icon="key"
                 title="Quick Login (Face ID / Touch ID)"
                 subtitle="Secure & quick access"
                 onPress={() => {}}
@@ -387,7 +427,7 @@ const ProfileScreen = () => {
               />
 
               <ProfileMenuItem
-                icon="🚪"
+                icon="log-out"
                 title="Log out"
                 subtitle="Further secure your account for safety"
                 onPress={handleLogout}
@@ -401,13 +441,13 @@ const ProfileScreen = () => {
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.editSection}>
               <Text style={styles.editTitle}>Edit Profile</Text>
-              
+
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Name *</Text>
                 <TextInput
                   style={styles.formInput}
                   value={editForm.name}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     console.log('🔤 Name input changed:', text);
                     setEditForm({ ...editForm, name: text });
                   }}
@@ -423,7 +463,7 @@ const ProfileScreen = () => {
                 <TextInput
                   style={styles.formInput}
                   value={editForm.email}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     console.log('📧 Email input changed:', text);
                     setEditForm({ ...editForm, email: text });
                   }}
@@ -441,7 +481,7 @@ const ProfileScreen = () => {
                 <TextInput
                   style={styles.formInput}
                   value={editForm.contact}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     console.log('📱 Contact input changed:', text);
                     setEditForm({ ...editForm, contact: text });
                   }}
@@ -494,7 +534,8 @@ const ProfileScreen = () => {
                 <Text style={styles.comingSoonEmoji}>🏋️‍♀️</Text>
                 <Text style={styles.comingSoonTitle}>Workout Features</Text>
                 <Text style={styles.comingSoonSubtitle}>
-                  Coming soon! Track your fitness journey, create workout plans, and monitor your progress.
+                  Coming soon! Track your fitness journey, create workout plans,
+                  and monitor your progress.
                 </Text>
               </View>
             </View>
@@ -510,14 +551,14 @@ const ProfileScreen = () => {
 
             <View style={styles.menuSection}>
               <ProfileMenuItem
-                icon="❓"
+                icon="help-circle"
                 title="Help & Support"
                 subtitle=""
                 onPress={handleHelpSupport}
               />
 
               <ProfileMenuItem
-                icon="ℹ️"
+                icon="nformation-circle"
                 title="About App"
                 subtitle=""
                 onPress={handleAboutApp}
@@ -533,11 +574,14 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
-      
+      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -571,9 +615,7 @@ const ProfileScreen = () => {
       </View> */}
 
       {/* Tab Content */}
-      <View style={styles.content}>
-        {renderTabContent()}
-      </View>
+      <View style={styles.content}>{renderTabContent()}</View>
 
       <View style={styles.bottomSpacing} />
     </SafeAreaView>
@@ -586,15 +628,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
   },
   header: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   backButton: {
-    padding: 8,
+    // padding: 8,
   },
   backArrow: {
     color: 'white',
@@ -628,7 +670,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#4ECDC4',
+    borderBottomColor: '#1F9393',
   },
   tabIcon: {
     fontSize: 16,
@@ -640,7 +682,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontWeight: '600',
   },
   content: {
@@ -648,14 +690,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   profileCard: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -733,7 +775,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     marginBottom: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -814,7 +856,7 @@ const styles = StyleSheet.create({
     color: '#2D3748',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -829,19 +871,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
     padding: 16,
     borderRadius: 25,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontSize: 16,
     fontWeight: '600',
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     padding: 16,
     borderRadius: 25,
     alignItems: 'center',

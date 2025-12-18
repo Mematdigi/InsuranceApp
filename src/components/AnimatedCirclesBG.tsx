@@ -531,7 +531,7 @@ export default function AnimatedCirclesBG() {
       </Svg>
 
       <Animated.Image
-        source={require('../../assets/images/center.png')}
+        source={require('../../assets/images/policy.png')}
         style={[styles.centerImage, imageStyle]}
         resizeMode="contain"
       />
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   centerImage: {
     position: 'absolute',
-    width: 120, // adjust size
-    height: 120,
+    width: '90%', // adjust size
+    // height: '40%',
   },
 });

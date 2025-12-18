@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   TextInput,
   ScrollView,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Configuration - matches your backend
 const API_CONFIG = {
@@ -406,7 +406,7 @@ const FillManuallyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4ECDC4" />
+      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -418,7 +418,7 @@ const FillManuallyScreen = () => {
       </View>
 
       {/* Tab Bar */}
-      <View style={styles.tabContainer}>
+      {/* <View style={styles.tabContainer}>
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'upload' && styles.activeTab]}
           onPress={() => handleTabChange('upload')}
@@ -436,7 +436,7 @@ const FillManuallyScreen = () => {
             ✏️ Fill Manually
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Form Fields */}
@@ -756,15 +756,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
   },
   header: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   backButton: {
-    padding: 8,
+    // padding: 8,
   },
   backArrow: {
     color: 'white',
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 12,
     padding: 4,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
   },
   tabText: {
     fontSize: 14,
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   fieldContainer: {
     marginBottom: 20,
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
   inputIcon: {
     fontSize: 16,
     marginRight: 12,
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   textInput: {
     flex: 1,
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
   dropdownIcon: {
     fontSize: 16,
     marginRight: 12,
-    color: '#4ECDC4',
+    color: '#1F9393',
   },
   dropdownText: {
     flex: 1,
@@ -898,13 +898,13 @@ const styles = StyleSheet.create({
   uploadSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 12,
   },
   uploadContainer: {
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
   uploadSuccessText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#1F9393',
     marginBottom: 4,
   },
   uploadSubtext: {
@@ -966,23 +966,23 @@ const styles = StyleSheet.create({
   selectButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#1F9393',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
   },
   selectButtonText: {
-    color: '#4ECDC4',
+    color: '#1F9393',
     fontSize: 14,
     fontWeight: '600',
   },
   addPolicyButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#1F9393',
     paddingVertical: 16,
     borderRadius: 25,
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#4ECDC4',
+    shadowColor: '#1F9393',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
