@@ -338,16 +338,21 @@ const LoginScreen = () => {
       setLoading(true);
 
       if (isOtpLogin && !otpSent) {
+        // console.log('otp');
         const res = await fetch(`${API_BASE}/otp-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contactNumber: identifier, role }),
         });
+        console.log(res);
         const data = await res.json();
+        console.log(data);
         if (!res.ok) {
           if (
             data.msg?.includes('not found') ||
-            data.msg?.includes('does not exist')
+            data.msg?.includes('does not exist') 
+            // ||
+            // data.msg?.includes('OTP not sent')
           ) {
             Alert.alert(
               'Account Not Found',
@@ -364,7 +369,7 @@ const LoginScreen = () => {
 
         setOtpSent(true);
         setTimer(120);
-        Alert.alert('Success', 'OTP sent successfully!');
+        // Alert.alert('Success', 'OTP sent successfully!');
       } else if (isOtpLogin && otpSent) {
         const enteredOtp = otp.join('');
         if (enteredOtp.length < 6) {
@@ -431,7 +436,7 @@ const LoginScreen = () => {
         };
 
         await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
-        Alert.alert('Success', 'Login successful!');
+        // Alert.alert('Success', 'Login successful!');
         setCustomerId(normalizedUser.id);
 
         if (role === 'Agent') {
@@ -692,9 +697,9 @@ const LoginScreen = () => {
                       onChangeText={setIdentifier}
                       onFocus={() => setEmailFocused(true)}
                       onBlur={() => setEmailFocused(false)}
-                      keyboardType="email-address"
+                      keyboardType={!isOtpLogin ? 'email-address' : 'phone-pad'}
                       autoCapitalize="none"
-                      autoComplete="email"
+                      // autoComplete="email"
                     />
                     <Text
                       style={[
@@ -702,7 +707,7 @@ const LoginScreen = () => {
                         (emailFocused || identifier) && styles.labelFocused, // ✅ ADD dynamic styling
                       ]}
                     >
-                      Email
+                      {!isOtpLogin ? 'Email' : 'Phone number'}
                     </Text>
                   </View>
 
@@ -1093,7 +1098,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    // elevation: 3,
   },
   tab: {
     flex: 1,

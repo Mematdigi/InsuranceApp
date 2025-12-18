@@ -11,12 +11,15 @@ import {
   RefreshControl,
   Animated,
   Platform,
+  Image,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Feather from 'react-native-vector-icons/Feather';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -393,6 +396,25 @@ const NewDashboardScreen = () => {
     );
   }
 
+  const openDialer = async (number: string) => {
+    const supported = await Linking.canOpenURL(`tel:${number}`);
+    if (supported) {
+      Linking.openURL(`tel:${number}`);
+    } else {
+      Alert.alert('Error', 'Dialer not supported');
+    }
+  };
+
+  const openFacebook = () => {
+    Linking.openURL('https://www.facebook.com/policysaath');
+  };
+  const openInsta = () => {
+    Linking.openURL('https://www.instagram.com/policysaath/');
+  };
+  const openYoutube = () => {
+    Linking.openURL('https://www.youtube.com/@PolicySaath');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
@@ -419,7 +441,12 @@ const NewDashboardScreen = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.notificationButton}>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => {
+              navigation.navigate('Notification');
+            }}
+          >
             <View style={styles.notificationIcon}>
               {/* <Text style={styles.bellIcon}>🔔</Text> */}
               <FontAwesome name="bell" size={24} color={'#ffffff'} />
@@ -723,13 +750,79 @@ const NewDashboardScreen = () => {
 
         {/* Need Help Section */}
         <View style={styles.helpSection}>
-          <Text style={styles.helpTitle}>Need Help !</Text>
-          <TouchableOpacity style={styles.chatBotButton} activeOpacity={0.8}>
+          <Text style={styles.helpTitle}>Contact Us!</Text>
+          {/* <TouchableOpacity style={styles.chatBotButton} activeOpacity={0.8}>
             <View style={styles.chatBotIcon}>
               <Text style={styles.chatBotEmoji}>🤖</Text>
             </View>
             <Text style={styles.chatBotText}>Chat Bot</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+
+          <View style={[styles.chatBotButton]}>
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#1F9393',
+                padding: 10,
+                borderRadius: 50,
+              }}
+              onPress={() => {
+                openDialer('9136356555');
+              }}
+            >
+              <Feather name="phone" size={24} color={'#fff'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#1F9393',
+                padding: 10,
+                borderRadius: 50,
+              }}
+              onPress={() => {
+                openFacebook();
+              }}
+            >
+              <Feather name="facebook" size={24} color={'#fff'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#1F9393',
+                padding: 10,
+                borderRadius: 50,
+              }}
+              onPress={() => {
+                openInsta();
+              }}
+            >
+              <Ionicons name="logo-instagram" size={24} color={'#fff'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#1F9393',
+                padding: 10,
+                borderRadius: 50,
+              }}
+              onPress={() => {
+                openYoutube();
+              }}
+            >
+              <Feather name="youtube" size={24} color={'#fff'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View
+          style={{
+            marginBottom: 150,
+            // justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Image
+            source={require('../../assets/images/policy.png')}
+            // width={200}
+            // height={200}
+            style={{ height: 120, width: 120, resizeMode: 'contain' }}
+          />
         </View>
 
         <View style={styles.bottomSpacing} />
@@ -1167,16 +1260,16 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    paddingVertical: 16,
+    backgroundColor: 'transparent',
+    // paddingVertical: 16,
     paddingHorizontal: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    shadowColor: '#1F9393',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
+    // shadowColor: '#1F9393',
+    // shadowOffset: { width: 0, height: -2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 8,
+    // elevation: 10,
   },
   navItem: {
     flex: 1,
@@ -1194,7 +1287,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   bottomSpacing: {
-    height: 20,
+    // height: 20,
   },
   noDataCard: {
     backgroundColor: '#F0F9F8',
@@ -1525,7 +1618,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   helpSection: {
-    marginBottom: 24,
+    marginBottom: 0,
   },
   helpTitle: {
     fontSize: 20,
@@ -1581,6 +1674,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     marginHorizontal: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   chatBotIcon: {
     width: 50,

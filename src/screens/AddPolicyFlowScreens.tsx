@@ -11,7 +11,7 @@
  * npm install @react-native-documents/picker react-native-image-picker
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,11 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 
 const API_BASE = 'https://policysaath.com/api';
 
@@ -173,151 +178,113 @@ const ChooseCompanyScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
+      <StatusBar barStyle="dark-content" backgroundColor="#1F9393" />
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton2}
-        >
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle2}>Add Policy</Text>
-        <View style={styles.placeholder} />
-      </View>
-      {/* <ScrollView style={styles.content} keyboardShouldPersistTaps="handled"> */}
-      {/* <AddPolicyToggleTabs activeTab="upload" /> */}
-      {/* <Text style={styles.headerTitle}>Choose Your Insurance Company</Text> */}
+      <LinearGradient colors={['#ffffff', '#6FD0CD']} style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton2}
+          >
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle2}>Add Policy</Text>
+          <View style={styles.placeholder} />
+        </View>
 
-      {/* <View style={styles.searchSection}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="🔍 Search company"
-            placeholderTextColor="#A0B7B3"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View> */}
-
-      {/* <View style={styles.companyList}>
-          {filteredCompanies.map((company, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[
-                styles.companyItem,
-                selectedCompany === company && styles.selectedCompanyItem,
-              ]}
-              onPress={() => setSelectedCompany(company)}
-            >
-              <Text
-                style={[
-                  styles.companyText,
-                  selectedCompany === company && styles.selectedCompanyText,
-                ]}
-              >
-                {company}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View> */}
-
-      {/* <TouchableOpacity
-          style={[
-            styles.continueButton,
-            !selectedCompany && styles.disabledButton,
-          ]}
-          onPress={handleContinue}
-          disabled={!selectedCompany}
-        >
-          <Text style={styles.continueButtonText}>Continue →</Text>
-        </TouchableOpacity> */}
-
-      <View style={{ alignItems: 'center', marginTop: '10%', gap: 20 }}>
         <View
           style={{
-            backgroundColor: '#6fd0cd8e',
-            height: 200,
-            width: 200,
-            borderRadius: 100,
-            alignItems:'center',
-            justifyContent:'center'
+            alignItems: 'center',
+            marginTop: '30%',
+            gap: 20,
           }}
         >
-          <Ionicons name="document-text-outline" size={100} color={'#fff'} />
+          <View
+            style={{
+              backgroundColor: '#6fd0cd8e',
+              height: 200,
+              width: 200,
+              borderRadius: 100,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="document-text-outline" size={100} color={'#fff'} />
+          </View>
+          <TouchableOpacity
+            style={{
+              paddingVertical: 10,
+              width: '90%',
+              borderWidth: 0.5,
+              borderColor: '#6FD0CD',
+              borderRadius: 20,
+              // alignItems: 'center',
+              backgroundColor: '#1F9393',
+              elevation: 3,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+            }}
+            onPress={() => {
+              navigation.navigate('AddPolicyStep2');
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '500',
+                color: '#ffffff',
+                alignSelf: 'center',
+              }}
+            >
+              Upload Policy
+            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={28}
+              color={'#ffffff'}
+              // style={{ alignSelf:'flex-end' }}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              paddingVertical: 10,
+              width: '90%',
+              borderWidth: 0.5,
+              borderColor: '#6FD0CD',
+              borderRadius: 20,
+              // alignItems: 'center',
+              backgroundColor: '#1F9393',
+              elevation: 3,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+            }}
+            onPress={() => {
+              navigation.navigate('FillManually');
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '500',
+                color: '#ffffff',
+                // alignSelf: 'center',
+              }}
+            >
+              Fill Manually
+            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={28}
+              color={'#ffffff'}
+              // style={{ position: 'relative', top: 60, right: '-85%' }}
+            />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={{
-            paddingVertical: 10,
-            width: '90%',
-            borderWidth: 0.5,
-            borderColor: '#6FD0CD',
-            borderRadius: 20,
-            // alignItems: 'center',
-            backgroundColor: '#1F9393',
-            elevation: 3,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap:10
-          }}
-          onPress={() => {
-            navigation.navigate('AddPolicyStep2');
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: '500',
-              color: '#ffffff',
-              alignSelf: 'center',
-            }}
-          >
-            Upload Policy
-          </Text>
-          <Ionicons
-            name="arrow-forward"
-            size={28}
-            color={'#ffffff'}
-            // style={{ alignSelf:'flex-end' }}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{
-            paddingVertical: 10,
-            width: '90%',
-            borderWidth: 0.5,
-            borderColor: '#6FD0CD',
-            borderRadius: 20,
-            // alignItems: 'center',
-            backgroundColor: '#1F9393',
-            elevation: 3,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap:10
-          }}
-          onPress={() => {
-            navigation.navigate('FillManually');
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: '500',
-              color: '#ffffff',
-              // alignSelf: 'center',
-            }}
-          >
-            Fill Manually
-          </Text>
-          <Ionicons
-            name="arrow-forward"
-            size={28}
-            color={'#ffffff'}
-            // style={{ position: 'relative', top: 60, right: '-85%' }}
-          />
-        </TouchableOpacity>
-      </View>
+      </LinearGradient>
       {/* </ScrollView> */}
     </SafeAreaView>
   );
@@ -356,6 +323,17 @@ const InsuranceNumberScreen = ({ route }: any) => {
   const [editHolder, setEditHolder] = useState(false);
   const [editPolicy, setEditPolicy] = useState(false);
   const [editFamily, setEditFamily] = useState(false);
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['28%'], []);
+
+  const openSheet = () => {
+    bottomSheetRef.current?.snapToIndex(0);
+  };
+
+  const closeSheet = () => {
+    bottomSheetRef.current?.close();
+  };
 
   const handleContinueOrSkip = (skipped = false) => {
     if (skipped) setInsuranceNumber('');
@@ -575,47 +553,49 @@ const InsuranceNumberScreen = ({ route }: any) => {
   const renderNumberStep = () => (
     <>
       {/* <AddPolicyToggleTabs activeTab="upload" /> */}
-      <View style={styles.stepCard}>
-        <View style={styles.stepIconContainer}>
-          <Text style={styles.stepIcon}>💳</Text>
-        </View>
-        <Text style={styles.stepTitle}>Insurance Number</Text>
-        <Text style={styles.stepSubtitle}>
-          Enter your policy number (optional)
-        </Text>
-
-        <View style={styles.tipBox}>
-          <Text style={styles.tipText}>
-            You can find your policy number on your insurance card. Skip if
-            unavailable.
+      <View style={{ marginTop: '30%' }}>
+        <View style={styles.stepCard}>
+          <View style={styles.stepIconContainer}>
+            <Text style={styles.stepIcon}>💳</Text>
+          </View>
+          <Text style={styles.stepTitle}>Insurance Number</Text>
+          <Text style={styles.stepSubtitle}>
+            Enter your policy number (optional)
           </Text>
-        </View>
 
-        <TextInput
-          style={styles.textInput}
-          value={insuranceNumber}
-          onChangeText={setInsuranceNumber}
-          placeholder="Enter policy number"
-          placeholderTextColor="#A0B7B3"
-        />
+          <View style={styles.tipBox}>
+            <Text style={styles.tipText}>
+              You can find your policy number on your insurance card. Skip if
+              unavailable.
+            </Text>
+          </View>
 
-        <View style={styles.infoBox}>
-          {/* <Text style={styles.infoBoxText}>🏢 Company: {company}</Text> */}
-        </View>
+          <TextInput
+            style={styles.textInput}
+            value={insuranceNumber}
+            onChangeText={setInsuranceNumber}
+            placeholder="Enter policy number"
+            placeholderTextColor="#A0B7B3"
+          />
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={() => handleContinueOrSkip(true)}
-          >
-            <Text style={styles.skipButtonText}>Skip</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.continueButtonInRow}
-            onPress={() => handleContinueOrSkip(false)}
-          >
-            <Text style={styles.continueButtonText}>Continue →</Text>
-          </TouchableOpacity>
+          {/* <View style={styles.infoBox}> */}
+            {/* <Text style={styles.infoBoxText}>🏢 Company: {company}</Text> */}
+          {/* </View> */}
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.skipButton}
+              onPress={() => handleContinueOrSkip(true)}
+            >
+              <Text style={styles.skipButtonText}>Skip</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.continueButtonInRow}
+              onPress={() => handleContinueOrSkip(false)}
+            >
+              <Text style={styles.continueButtonText}>Continue →</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </>
@@ -627,73 +607,91 @@ const InsuranceNumberScreen = ({ route }: any) => {
   const renderUploadStep = () => (
     <>
       {/* <AddPolicyToggleTabs activeTab="upload" /> */}
-      <View style={styles.stepCard}>
-        <View style={styles.stepIconContainer}>
-          <Text style={styles.stepIcon}>📤</Text>
-        </View>
-        <Text style={styles.stepTitle}>Upload Your Policy</Text>
-        <Text style={styles.stepSubtitle}>Choose how to add your document</Text>
+      <View style={{ marginTop: '15%' }}>
+        <View style={styles.stepCard}>
+          <View style={styles.stepIconContainer}>
+            <Text style={styles.stepIcon}>📤</Text>
+          </View>
+          <Text style={styles.stepTitle}>Upload Your Policy</Text>
+          <Text style={styles.stepSubtitle}>
+            Choose how to add your document
+          </Text>
 
-        <View style={styles.infoBox}>
+          {/* <View style={styles.infoBox}> */}
           {/* <Text style={styles.infoBoxText}>🏢 {company}</Text> */}
+          {/* </View> */}
+
+          {isUploading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#1F9393" />
+              <Text style={styles.loadingText}>
+                Processing your document...
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.uploadOptionsContainer}>
+              {/* <TouchableOpacity
+                style={styles.uploadOption}
+                onPress={handleCameraCapture}
+              >
+                <Text style={styles.uploadOptionIcon}>📷</Text>
+                <View>
+                  <Text style={styles.uploadOptionTitle}>Take Photo</Text>
+                  <Text style={styles.uploadOptionSubtitle}>
+                    Capture with camera
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.uploadOption}
+                onPress={handleGallerySelection}
+              >
+                <Text style={styles.uploadOptionIcon}>🖼️</Text>
+                <View>
+                  <Text style={styles.uploadOptionTitle}>
+                    Choose from Gallery
+                  </Text>
+                  <Text style={styles.uploadOptionSubtitle}>
+                    Select from photos
+                  </Text>
+                </View>
+              </TouchableOpacity> */}
+
+              <TouchableOpacity style={styles.uploadOption} onPress={openSheet}>
+                <Text style={styles.uploadOptionIcon}>🖼️</Text>
+                <View>
+                  <Text style={styles.uploadOptionTitle}>Upload Photo</Text>
+                  <Text style={styles.uploadOptionSubtitle}>
+                    Take photo or choose from gallery
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.uploadOption}
+                onPress={handlePDFUpload}
+              >
+                <Text style={styles.uploadOptionIcon}>📄</Text>
+                <View>
+                  <Text style={styles.uploadOptionTitle}>Import PDF</Text>
+                  <Text style={styles.uploadOptionSubtitle}>
+                    Select a PDF document
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentStep('number')}
+          >
+            <Text style={styles.backButtonText}>
+              ← Back to Insurance Number
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        {isUploading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1F9393" />
-            <Text style={styles.loadingText}>Processing your document...</Text>
-          </View>
-        ) : (
-          <View style={styles.uploadOptionsContainer}>
-            <TouchableOpacity
-              style={styles.uploadOption}
-              onPress={handleCameraCapture}
-            >
-              <Text style={styles.uploadOptionIcon}>📷</Text>
-              <View>
-                <Text style={styles.uploadOptionTitle}>Take Photo</Text>
-                <Text style={styles.uploadOptionSubtitle}>
-                  Capture with camera
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.uploadOption}
-              onPress={handleGallerySelection}
-            >
-              <Text style={styles.uploadOptionIcon}>🖼️</Text>
-              <View>
-                <Text style={styles.uploadOptionTitle}>
-                  Choose from Gallery
-                </Text>
-                <Text style={styles.uploadOptionSubtitle}>
-                  Select from photos
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.uploadOption}
-              onPress={handlePDFUpload}
-            >
-              <Text style={styles.uploadOptionIcon}>📄</Text>
-              <View>
-                <Text style={styles.uploadOptionTitle}>Import PDF</Text>
-                <Text style={styles.uploadOptionSubtitle}>
-                  Select a PDF document
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => setCurrentStep('number')}
-        >
-          <Text style={styles.backButtonText}>← Back to Insurance Number</Text>
-        </TouchableOpacity>
       </View>
     </>
   );
@@ -909,22 +907,77 @@ const InsuranceNumberScreen = ({ route }: any) => {
     </>
   );
 
+  const renderBackdrop = (props: any) => (
+    <BottomSheetBackdrop
+      {...props}
+      appearsOnIndex={0}
+      disappearsOnIndex={-1}
+      opacity={0.6} // background dark/blur feel
+      pressBehavior="close" // background tap se close ❌
+    />
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1F9393" />
-      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
-        {currentStep === 'number' && renderNumberStep()}
-        {currentStep === 'upload' && renderUploadStep()}
-        {currentStep === 'review' && renderReviewStep()}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+      <StatusBar barStyle="dark-content" backgroundColor="#1F9393" />
+      <LinearGradient colors={['#ffffff', '#6FD0CD']} style={{ flex: 1 }}>
+        <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+          {currentStep === 'number' && renderNumberStep()}
+          {currentStep === 'upload' && renderUploadStep()}
+          {currentStep === 'review' && renderReviewStep()}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={-1}
+          snapPoints={snapPoints}
+          enablePanDownToClose={true}
+          enableOverDrag={false}
+          handleComponent={null}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={{
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          }}
+        >
+          <BottomSheetView style={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>Upload Policy</Text>
+
+            <TouchableOpacity
+              style={styles.sheetButton}
+              onPress={() => {
+                closeSheet();
+                handleCameraCapture();
+              }}
+            >
+              <Text style={styles.sheetIcon}>📷</Text>
+              <Text style={styles.sheetText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sheetButton}
+              onPress={() => {
+                closeSheet();
+                handleGallerySelection();
+              }}
+            >
+              <Text style={styles.sheetIcon}>🖼️</Text>
+              <Text style={styles.sheetText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={closeSheet} style={styles.cancelBtn}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </BottomSheetView>
+        </BottomSheet>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
 
-// ======================
-// Upload Policy Screen (Standalone - for direct access)
-// ======================
+// Upload Policy Screen
+
 const UploadPolicyScreen = ({ route }: any) => {
   const navigation = useNavigation<any>();
   const { company } = route.params || {};
@@ -972,8 +1025,6 @@ const UploadPolicyScreen = ({ route }: any) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9F8' },
   content: { flex: 1, padding: 20 },
-
-  // Tabs
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: 'white',
@@ -986,15 +1037,12 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: '#1F9393' },
   tabText: { fontSize: 14, color: '#61BACA', fontWeight: '600' },
   activeTabText: { color: 'white' },
-
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1F9393',
     marginBottom: 16,
   },
-
-  // Search
   searchSection: {
     backgroundColor: 'white',
     padding: 12,
@@ -1307,6 +1355,42 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+  },
+  sheetContent: {
+    padding: 20,
+  },
+
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+
+  sheetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+
+  sheetIcon: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+
+  sheetText: {
+    fontSize: 16,
+  },
+
+  cancelBtn: {
+    marginTop: 10,
+    paddingVertical: 12,
+  },
+
+  cancelText: {
+    textAlign: 'center',
+    color: 'red',
+    fontSize: 16,
   },
 });
 

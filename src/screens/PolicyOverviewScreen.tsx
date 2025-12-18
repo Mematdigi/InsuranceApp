@@ -442,7 +442,7 @@ const PolicyOverviewScreen = () => {
           <View style={{ alignItems: 'flex-end' }}>
             <TouchableOpacity
               style={{
-                backgroundColor: '#1F9393',
+                backgroundColor: 'red',
                 paddingHorizontal: 16,
                 paddingVertical: 8,
                 borderRadius: 20,
@@ -452,7 +452,7 @@ const PolicyOverviewScreen = () => {
                 console.log('change status', { customerId, policyId });
               }}
             >
-              <Text style={{ color: '#fff', textAlign: 'center' }}>
+              <Text style={{ color: '#eee', textAlign: 'center' }}>
                 Change Status
               </Text>
             </TouchableOpacity>

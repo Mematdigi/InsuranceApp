@@ -25,6 +25,8 @@ import { AuthProvider } from './src/context/AuthContext';
 import Onboarding1 from './src/screens/Onboarding1';
 import Start1 from './src/screens/Start1';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Notification from './src/screens/Notification';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -50,24 +52,56 @@ export type RootStackParamList = {
   FAQ: undefined;
   Onboarding1: undefined;
   Start1: undefined;
+  Notification: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [initialRoute, setInitialRoute] = useState<
+    'Onboarding1' | 'Login' | 'CustomerDashboard' | null
+  >(null);
+
+  // useEffect(() => {
+  //   const checkFirstLaunch = async () => {
+  //     const alreadyLaunched = await AsyncStorage.getItem('alreadyLaunched');
+  //     if (alreadyLaunched) {
+  //       setIsFirstLaunch(false);
+  //     } else {
+  //       setIsFirstLaunch(true);
+  //       await AsyncStorage.setItem('alreadyLaunched', 'true');
+  //     }
+  //   };
+
+  //   checkFirstLaunch();
+  // }, []);
 
   useEffect(() => {
-    const checkFirstLaunch = async () => {
+    const checkAppFlow = async () => {
       const alreadyLaunched = await AsyncStorage.getItem('alreadyLaunched');
-      if (alreadyLaunched) {
-        setIsFirstLaunch(false);
-      } else {
-        setIsFirstLaunch(true);
+      const username = await AsyncStorage.getItem('user'); // 👈 username key
+
+      console.log(username);
+
+      if (!alreadyLaunched) {
+        // First time launch
         await AsyncStorage.setItem('alreadyLaunched', 'true');
+        setIsFirstLaunch(true);
+        setInitialRoute('Onboarding1');
+      } else {
+        // Not first launch
+        setIsFirstLaunch(false);
+
+        if (username) {
+          setInitialRoute('CustomerDashboard');
+        } else {
+          setInitialRoute('Login');
+        }
       }
     };
-    checkFirstLaunch();
+
+    checkAppFlow();
   }, []);
 
   if (isFirstLaunch === null) {
@@ -75,14 +109,18 @@ const App = () => {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+
+    
     <AuthProvider>
       <NavigationContainer>
         <Stack.Navigator
-          // initialRouteName={isFirstLaunch ? 'Onboarding1' : 'Login'}
+          initialRouteName={initialRoute as any}
           screenOptions={{ headerShown: false }}
         >
           <Stack.Screen name="Onboarding1" component={Onboarding1} />
           <Stack.Screen name="Start1" component={Start1} />
+          <Stack.Screen name="Notification" component={Notification} />
           <Stack.Screen
             name="Login"
             component={LoginPage}
@@ -108,7 +146,7 @@ const App = () => {
           <Stack.Screen name="ChooseCompany" component={ChooseCompanyScreen} />
           <Stack.Screen
             name="AddPolicyStep2"
-            component={InsuranceNumberScreen} 
+            component={InsuranceNumberScreen}
           />
           {/* <Stack.Screen name="AddPolicyStep3" component={InsuranceNumberWithDataScreen} /> */}
           <Stack.Screen name="UploadPolicy" component={UploadPolicyScreen} />
@@ -121,6 +159,7 @@ const App = () => {
         </Stack.Navigator>
       </NavigationContainer>
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 };
 

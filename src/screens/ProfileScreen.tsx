@@ -193,13 +193,17 @@ const ProfileScreen = () => {
       const response = await fetch(
         `https://policysaath.com/v1/customer/customers/${customerId}`,
         {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
         },
       );
+
+      console.log(response);
+
+
 
       console.log('💾 Response status:', response.status);
       console.log(
@@ -214,6 +218,7 @@ const ProfileScreen = () => {
       }
 
       const updatedData = await response.json();
+      console.log(updatedData);
       console.log(
         '✅ Profile updated - Response:',
         JSON.stringify(updatedData, null, 2),
