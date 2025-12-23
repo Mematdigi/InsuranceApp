@@ -350,7 +350,7 @@ const LoginScreen = () => {
         if (!res.ok) {
           if (
             data.msg?.includes('not found') ||
-            data.msg?.includes('does not exist') 
+            data.msg?.includes('does not exist')
             // ||
             // data.msg?.includes('OTP not sent')
           ) {
@@ -385,6 +385,7 @@ const LoginScreen = () => {
           }),
         });
         const data = await res.json();
+        console.log(data);
         if (!res.ok) throw new Error(data.msg || 'OTP verification failed');
 
         // ✅ Normalize user object so it always has an `id` field
@@ -411,6 +412,7 @@ const LoginScreen = () => {
           body: JSON.stringify({ identifier, password, role }),
         });
         const data = await res.json();
+        console.log(data);
         if (!res.ok) {
           if (
             data.msg?.includes('not found') ||
@@ -440,6 +442,7 @@ const LoginScreen = () => {
         setCustomerId(normalizedUser.id);
 
         if (role === 'Agent') {
+          
           navigation.replace('SelectInsurance');
         } else {
           navigation.replace('CustomerDashboard', {

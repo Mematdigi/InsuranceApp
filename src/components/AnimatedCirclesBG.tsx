@@ -469,7 +469,7 @@ export default function AnimatedCirclesBG() {
   }));
 
   return (
-    <Pressable style={styles.container} onPress={runOnce}>
+    <Pressable style={styles.container}>
       <Svg
         width={width}
         height={height}
